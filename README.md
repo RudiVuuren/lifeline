@@ -28,7 +28,13 @@ Opening a link replaces the diagram that was open. **File → Restore previous d
 
 ## Generating diagrams with an AI
 
-Give [`docs/ai-guide.md`](docs/ai-guide.md) to the AI. It covers the YAML format, design rules, a full example, a checklist and how to build `/open/` links.
+[`skill/lifeline/`](skill/lifeline/) is an Agent Skill that teaches an AI to write Lifeline diagrams:
+
+- `SKILL.md`: the format, badge conventions, design rules, link building and a checklist
+- `references/example.yaml`: a complete example with linked flows and badges
+- `scripts/lifeline.py`: checks a diagram and prints a link that opens it (`python lifeline.py diagram.yaml`)
+
+To add it to Claude, zip the `lifeline` folder and upload it as a skill. For other AIs, give them `SKILL.md`; the example and script are optional extras.
 
 ## Files
 
@@ -36,7 +42,7 @@ Give [`docs/ai-guide.md`](docs/ai-guide.md) to the AI. It covers the YAML format
 |------|------------|
 | `index.html` | The whole app: one self-contained page, with libraries loaded from jsDelivr |
 | `open/index.html` | The `/open/` route; it forwards the link's diagram to the app |
-| `docs/ai-guide.md` | Instructions for AIs that generate Lifeline YAML and links |
+| `skill/lifeline/` | Agent Skill for AIs that generate Lifeline diagrams and links |
 
 ## Hosting
 
