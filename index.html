@@ -181,6 +181,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background-image: radial-gradient(var(--dot) 1px, transparent 1.2px); background-size: 18px 18px;
 }
 .canvas-inner { padding: 24px 16px 120px; width: max-content; min-width: 100%; position: relative; }
+.inline-ed {
+  position: absolute; z-index: 6; resize: none; overflow: hidden; padding: 2px 4px; margin: 0; line-height: 1.25;
+  border: 1.5px solid var(--accent); border-radius: 5px; background: var(--surface); color: var(--ink);
+  box-shadow: 0 0 0 4px var(--accent-soft); outline: none;
+}
+#diagram .editing .lb, #diagram .editing .hn { opacity: 0; }
+#diagram.ctrl-held .lnk { cursor: pointer; }
 .hd-acts button {
   width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--muted);
   display: grid; place-items: center; cursor: pointer; padding: 0;
@@ -1013,7 +1020,7 @@ function computeLayout(f, design) {
 function textBlock(lines, x, y0, lh, cls, anchor, link) {
   const ok = linkOk(link);
   const tsp = lines.map((l, k) => `<tspan x="${x}" y="${y0 + k * lh}">${esc(l)}</tspan>`).join('');
-  return `<text class="${cls}${ok ? ' lnk' : ''}"${ok ? ` data-link="${esc(link)}"` : ''} text-anchor="${anchor}">${ok ? `<title>Open ${esc(doc.flows[link].name)}</title>` : ''}${tsp}</text>`;
+  return `<text class="${cls}${ok ? ' lnk' : ''}"${ok ? ` data-link="${esc(link)}"` : ''} text-anchor="${anchor}">${ok ? `<title>${tab === 'design' ? 'Ctrl+click to open' : 'Open'} ${esc(doc.flows[link].name)}</title>` : ''}${tsp}</text>`;
 }
 
 function headSvg(p, i) {
@@ -1095,6 +1102,7 @@ function msgSvg(m, j) {
 }
 
 function renderDiagram(animate) {
+  if (inlineEd && !inlineEd.ta.isConnected) inlineEd = null;
   const f = flow(), design = tab === 'design';
   lay = computeLayout(f, design);
   let s = '';
@@ -1504,7 +1512,7 @@ function onDown(e) {
   let under = null;
   if (lane) under = document.elementsFromPoint(e.clientX, e.clientY).find((el) => !el.classList.contains('lane') && el.closest && el.closest('#diagram [data-kind]'));
   const ghost = e.target.closest('[data-act="addp"]');
-  drag = { x: pt.x, y: pt.y, cx: e.clientX, cy: e.clientY, moved: false, mode: null, node: node ? { kind: node.dataset.kind, id: node.dataset.id } : null, ghost: !!ghost, link: e.target.closest('[data-link]')?.dataset.link || null };
+  drag = { x: pt.x, y: pt.y, cx: e.clientX, cy: e.clientY, moved: false, mode: null, node: node ? { kind: node.dataset.kind, id: node.dataset.id } : null, ghost: !!ghost, link: e.target.closest('[data-link]')?.dataset.link || null, mod: e.ctrlKey || e.metaKey };
   drag.badge = e.target.closest('[data-badge]')?.dataset.badge ?? null;
   if (under) { const un = under.closest('[data-kind]'); drag.under = { kind: un.dataset.kind, id: un.dataset.id }; drag.link = under.closest('[data-link]')?.dataset.link || null; drag.badge = under.closest('[data-badge]')?.dataset.badge ?? null; }
   const anc = e.target.closest('[data-anchor]');
@@ -1581,7 +1589,7 @@ function onUp(e) {
     return;
   }
   if (d.mode === 'anchor') return;
-  if (d.mode === 'connect' && !d.moved) return tap(d.under, d.link, d.badge);
+  if (d.mode === 'connect' && !d.moved) return tap(d.under, d.link, d.badge, d.mod);
   if (d.moved && d.mode === 'connect') {
     const pt = svgPoint(e);
     const to = nearestLane(pt.x);
@@ -1593,9 +1601,17 @@ function onUp(e) {
     return;
   }
   if (d.ghost) return addParticipant();
-  tap(d.node, d.link, d.badge);
+  tap(d.node, d.link, d.badge, d.mod);
 }
-function tap(t, link, badge) {
+function tap(t, link, badge, mod) {
+  // Design: Ctrl/Cmd+click opens the linked flow (or offers to create one).
+  if (t && mod && tab === 'design' && t.kind !== 'flow') {
+    lastTap = { key: null, t: 0 };
+    const n = getNode(t);
+    if (n && linkOk(n.link)) drillTo(n.link);
+    else { if (!sel || sel.kind !== t.kind || sel.id !== t.id) select(t); openLinkModal(t); }
+    return;
+  }
   if (t && badge != null) {
     lastTap = { key: null, t: 0 };
     pendingTab = +badge;
@@ -1606,9 +1622,70 @@ function tap(t, link, badge) {
   if (t && link && tab === 'preview') { lastTap = { key: null, t: 0 }; drillTo(link); return; }
   if (!t) { if (sel) select(null); return; }
   const key = `${flowId()}:${t.kind}:${t.id}`, now = performance.now();
-  if (lastTap.key === key && now - lastTap.t < 400) { lastTap = { key: null, t: 0 }; drill(t); return; }
+  if (lastTap.key === key && now - lastTap.t < 400) { lastTap = { key: null, t: 0 }; if (tab === 'design') startInlineEdit(t); else drill(t); return; }
   lastTap = { key, t: now };
   if (!sel || sel.kind !== t.kind || sel.id !== t.id) select(t);
+}
+
+// ---------- inline text editing on the canvas (Design) ----------
+let inlineEd = null;
+function startInlineEdit(t) {
+  if (tab !== 'design' || !t || t.kind === 'flow') return;
+  finishInlineEdit(true);
+  if (!sel || sel.kind !== t.kind || sel.id !== t.id) select(t);
+  const f = flow(), n = getNode(t);
+  if (!n) return;
+  const svg = $('#diagram');
+  let x, y, w, h, align = 'center', font, value;
+  if (t.kind === 'p') {
+    const i = f.participants.indexOf(n), lines = lay.heads[i].length;
+    w = L.headW - 12; x = lay.xs[i] - w / 2; h = Math.max(1, lines) * HLH + 6;
+    y = n.type === 'actor' ? lay.top + 33 : lay.top + (lay.hh - h) / 2 + (n.type === 'external' ? 7 : 0);
+    font = FONT_HN; value = n.name;
+  } else {
+    const j = f.messages.indexOf(n), m = n;
+    const i1 = f.participants.findIndex((p) => p.id === m.from), i2 = f.participants.findIndex((p) => p.id === m.to);
+    const lines = lay.lines[j].length, ly = lay.ys[j];
+    h = lines * LH + 6;
+    if (i1 === i2) { x = lay.xs[i1] + 48; w = SELF_W + 12; y = ly + 1; align = 'left'; }
+    else { const a = Math.min(lay.xs[i1], lay.xs[i2]), b = Math.max(lay.xs[i1], lay.xs[i2]); x = a + 22; w = b - a - 44; y = ly - 8 - (lines - 1) * LH - 14; }
+    font = FONT_LB; value = m.label;
+  }
+  const g = svg.querySelector(`[data-kind="${t.kind}"][data-id="${CSS.escape(t.id)}"]`);
+  if (g) g.classList.add('editing');
+  const ta = document.createElement('textarea');
+  ta.className = 'inline-ed';
+  ta.value = value;
+  ta.spellcheck = false;
+  ta.setAttribute('aria-label', t.kind === 'p' ? 'Participant name' : 'Step label');
+  const host = svg.parentElement, sr = svg.getBoundingClientRect(), hr = host.getBoundingClientRect();
+  const ox = sr.left - hr.left, oy = sr.top - hr.top;
+  Object.assign(ta.style, {
+    left: `${ox + x * zoom}px`, top: `${oy + y * zoom}px`, width: `${w * zoom}px`, minHeight: `${h * zoom}px`,
+    font: font.replace(/(\d+(?:\.\d+)?)px/, (_, px) => `${px * zoom}px`), textAlign: align,
+  });
+  host.appendChild(ta);
+  const grow = () => { ta.style.height = 'auto'; ta.style.height = `${ta.scrollHeight}px`; };
+  grow();
+  ta.addEventListener('input', grow);
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finishInlineEdit(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finishInlineEdit(false); }
+  });
+  ta.addEventListener('blur', () => finishInlineEdit(true));
+  ta.addEventListener('pointerdown', (e) => e.stopPropagation());
+  inlineEd = { t, ta, prop: t.kind === 'p' ? 'name' : 'label' };
+  ta.focus(); ta.select();
+}
+function finishInlineEdit(keep) {
+  if (!inlineEd) return;
+  const { t, ta, prop } = inlineEd;
+  inlineEd = null;
+  const v = ta.value.replace(/\s+/g, ' ').trim();
+  ta.remove();
+  const n = getNode(t);
+  if (keep && n && v !== n[prop] && (v || prop === 'label')) commit(() => { getNode(t)[prop] = v; });
+  else renderDiagram();
 }
 
 // ---------- tabs ----------
@@ -1994,6 +2071,8 @@ function wire() {
   $('#btnAddFlow').addEventListener('click', addFlow);
   wireEditorPane();
   window.addEventListener('hashchange', importFromUrl);
+  const ctrlCursor = (e) => $('#diagram').classList.toggle('ctrl-held', tab === 'design' && (e.ctrlKey || e.metaKey));
+  window.addEventListener('keydown', ctrlCursor); window.addEventListener('keyup', ctrlCursor); window.addEventListener('blur', () => $('#diagram').classList.remove('ctrl-held'));
   $('#tree').addEventListener('click', railClick);
   $('#flowSelect').addEventListener('change', (e) => { nav = [e.target.value]; sel = null; render(true); renderDiagram(true); });
   $('#crumbs').addEventListener('click', (e) => {
@@ -2031,7 +2110,8 @@ function wire() {
     if (e.key === '2') setTab('design');
     if (e.key === '3') setTab('preview');
     if ((e.key === 'Delete' || e.key === 'Backspace') && sel) { e.preventDefault(); deleteSelected(); }
-    if (e.key === 'Enter' && sel && sel.kind !== 'flow') drill(sel);
+    if (e.key === 'Enter' && sel && sel.kind !== 'flow') { if (tab === 'design' && !(e.ctrlKey || e.metaKey)) { e.preventDefault(); startInlineEdit(sel); } else drill(sel); }
+    if (e.key === 'F2' && sel && sel.kind !== 'flow' && tab === 'design') { e.preventDefault(); startInlineEdit(sel); }
   });
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
   mq.addEventListener && mq.addEventListener('change', applyMonacoTheme);
