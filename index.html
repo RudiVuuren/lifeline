@@ -126,13 +126,19 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .menu hr { border: 0; border-top: 1px solid var(--rule); margin: 4px 2px; }
 
 /* ---------- body grid ---------- */
-.body { display: grid; grid-template-columns: 236px minmax(0, 1fr) 344px; min-height: 0; }
-.body.no-insp { grid-template-columns: 236px minmax(0, 1fr); }
-.body.mode-yaml { grid-template-columns: 236px minmax(0, 1fr); }
+.body { --rail-width: 320px; display: grid; position: relative; grid-template-columns: var(--rail-width) minmax(0, 1fr) 344px; min-height: 0; }
+.body.no-insp { grid-template-columns: var(--rail-width) minmax(0, 1fr); }
+.body.mode-yaml { grid-template-columns: var(--rail-width) minmax(0, 1fr); }
 .body.mode-yaml .insp { display: none; }
 .body.mode-yaml .stage { grid-template-rows: minmax(0, 1fr); }
 .body.no-insp .insp { display: none; }
 
+.rail-resizer { position: absolute; left: calc(var(--rail-width) - 5px); top: 0; bottom: 0; width: 10px; z-index: 20; cursor: col-resize; touch-action: none; background: transparent; }
+.rail-resizer::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px; background: var(--accent); opacity: 0; transition: opacity .15s; }
+.rail-resizer:hover::after, .rail-resizer:focus-visible::after, .body.rail-resizing .rail-resizer::after { opacity: .8; }
+.body.rail-resizing, .body.rail-resizing * { cursor: col-resize !important; user-select: none !important; }
+.body.mode-map .rail-resizer { display: none; }
+@media (max-width: 860px) { .body .rail-resizer { display: none; } }
 /* rail */
 .rail { background: var(--panel); border-right: 1px solid var(--rule); overflow: auto; padding: 14px 10px 20px; min-width: 0; }
 .rail-h { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 8px; }
@@ -469,11 +475,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .map-node .map-box { fill:var(--surface); stroke:var(--line); stroke-width:1.4; }
 .map-node:hover .map-box { stroke:var(--accent); stroke-width:2.3; }
 .map-node.map-active .map-box { stroke:var(--accent); stroke-width:2.4; fill:var(--accent-soft); }
+/* A click-focused node remains visibly selected, independent of the active diagram. */
+.map-node.map-selected .map-box { stroke:var(--accent); stroke-width:3; fill:var(--accent-soft); }
+.map-node.map-selected text { fill:var(--accent); }
 .map-node text { fill:var(--ink); font:600 13px var(--f-ui); pointer-events:none; }
 .map-edge { fill:none; stroke:var(--link); stroke-width:1.45; opacity:.13; pointer-events:stroke; }
 .map-edge:hover { stroke-width:3; opacity:1; }
 .map-edge.missing { stroke:var(--danger); stroke-dasharray:6 4; }
 .map-node, .map-edge { transition:opacity .15s ease; }
+#mapSvg.map-animating .map-edge { opacity:.32; }
+#mapSvg.map-animating.map-compacting .map-edge:not(.map-hidden) { opacity:.5; }
+@media (prefers-reduced-motion: reduce) { .map-node, .map-edge { transition:none; } }
+/* Click focus temporarily packs directly connected flows around the fixed anchor. */
+#mapSvg.map-compacting .map-hidden { display:none; }
+/* In compact selection, every visible direct reference is fully opaque. */
+#mapSvg.map-compacting .map-edge:not(.map-hidden) { opacity:1; stroke-opacity:1; }
 .map-node.map-dim, .map-edge.map-dim { opacity:.25; }
 .map-node.map-related, .map-edge.map-related { opacity:.8; }
 .map-node.map-focus { opacity:1; }
@@ -485,7 +501,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* While hovering another flow, active selection must not override hover emphasis. */
 #mapSvg.map-hovering .map-node.map-active.map-dim { opacity:.25; }
 #mapSvg.map-hovering .map-node.map-active.map-related { opacity:.8; }
-#mapSvg.map-hovering .map-node.map-active:not(.map-focus) .map-box { fill:var(--surface); stroke:var(--line); stroke-width:1.4; }
+#mapSvg.map-hovering .map-node.map-active:not(.map-focus):not(.map-selected) .map-box { fill:var(--surface); stroke:var(--line); stroke-width:1.4; }
+/* Click selection remains distinct while inspecting neighbouring nodes. */
+#mapSvg .map-node.map-selected .map-box { stroke:var(--accent); stroke-width:3; fill:var(--accent-soft); }
+#mapSvg .map-node.map-selected text { fill:var(--accent); }
 .map-link-label { fill:var(--muted); font:10px var(--f-mono); }
 @media (max-width:860px) { .top { grid-template-columns:auto minmax(0,1fr) auto auto; } .map-switch { grid-column:4; grid-row:1; } .actions { grid-column:3; grid-row:1; } }
 
@@ -570,6 +589,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
       </div>
       <div class="tree" id="tree"></div>
     </aside>
+    <div class="rail-resizer" id="railResizer" role="separator" aria-label="Resize Files and Flows panel" aria-orientation="vertical" aria-valuemin="240" aria-valuemax="600" aria-valuenow="320" tabindex="0" title="Drag to resize Files & Flows; double-click to reset"></div>
 
     <main class="stage">
       <div class="crumbbar" id="crumbbar">
@@ -1201,10 +1221,31 @@ function layoutClasses() {
 function renderTabs() {
   document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
 }
+let lastRailTarget = null;
+let railScrollFrame = 0;
+function scrollActiveFlowIntoView(force = false) {
+  const rail = document.querySelector('.rail');
+  const active = document.querySelector('#tree .tree-item.active');
+  if (!rail || !active || rail.getClientRects().length === 0) return;
+  const a = active.getBoundingClientRect(), r = rail.getBoundingClientRect();
+  // Scroll only the sidebar, and only if the selected item is outside its viewport.
+  const padding = 12;
+  if (a.top < r.top + padding || a.bottom > r.bottom - padding) {
+    const delta = a.top < r.top + padding ? a.top - r.top - padding : a.bottom - r.bottom + padding;
+    rail.scrollTo({ top: rail.scrollTop + delta, behavior: force ? 'auto' : 'smooth' });
+  }
+}
 function renderRail() {
   const cur = flowId();
+  const railTarget = encodeTarget(activeFileKey, cur);
+  const changed = railTarget !== lastRailTarget;
+  lastRailTarget = railTarget;
   $('#tree').innerHTML = workspace.map((e) => `<section class="tree-file ${e.key === activeFileKey ? 'current' : ''}"><div class="tree-file-heading"><span class="tree-file-icon" aria-hidden="true">${ICON.file}</span><span class="tree-file-name" title="${esc(entryLabel(e))}">${esc(entryLabel(e))}</span><button class="tree-file-add" type="button" data-add-flow="${esc(e.key)}" title="Add flow to ${esc(entryLabel(e))}" aria-label="Add flow to ${esc(entryLabel(e))}">${ICON.plus}</button><button class="${e.handle || e.inDirectory ? 'tree-file-sync' : 'tree-file-add tree-file-remove'}" type="button" ${e.handle || e.inDirectory ? `data-sync-file="${esc(e.key)}" data-enabled="${!perFilePaused.has(entryKey(e.path))}" aria-pressed="${!perFilePaused.has(entryKey(e.path))}" title="${perFilePaused.has(entryKey(e.path)) ? 'Resume syncing' : 'Pause syncing'} ${esc(entryLabel(e))}" aria-label="${perFilePaused.has(entryKey(e.path)) ? 'Resume syncing' : 'Pause syncing'} ${esc(entryLabel(e))}"` : `data-remove-file="${esc(e.key)}" title="Delete browser file" aria-label="Delete ${esc(entryLabel(e))}"`}>${e.handle || e.inDirectory ? ICON.link : ICON.trash}</button></div><div class="tree-file-flows">${Object.entries(e.doc.flows).map(([id, f]) => `<button class="tree-item ${e.key === activeFileKey && id === cur ? 'active' : ''}" data-file="${esc(e.key)}" data-flow="${esc(id)}"><span class="gl">${e.key === activeFileKey && id === cur ? '◆' : '◇'}</span><span class="nm">${esc(f.name)}</span></button>`).join('')}</div></section>`).join('');
   $('#flowSelect').innerHTML = workspace.map((e) => `<optgroup label="${esc(entryLabel(e))}">${Object.entries(e.doc.flows).map(([id, f]) => `<option value="${esc(encodeTarget(e.key, id))}" ${e.key === activeFileKey && id === cur ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</optgroup>`).join('');
+  if (changed) {
+    cancelAnimationFrame(railScrollFrame);
+    railScrollFrame = requestAnimationFrame(() => { railScrollFrame = 0; scrollActiveFlowIntoView(); });
+  }
 }
 function renderCrumbs() {
   $('#crumbs').innerHTML = nav.map((x, i) => {
@@ -2061,6 +2102,70 @@ function finishInlineEdit(keep) {
 
 // ---------- cross-file flow map ----------
 let mapBounds = { width: 800, height: 500 }, mapView = { x:0, y:0, w:800, h:500 }, mapPointer = null;
+let mapPanMoved = false;
+let mapClickTimer = null;
+let mapAnimation = null;
+const mapReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function stopMapAnimation() {
+  if (mapAnimation) { cancelAnimationFrame(mapAnimation.frame); mapAnimation = null; }
+  $('#mapSvg').classList.remove('map-animating');
+}
+function mapGeometry() {
+  const svg = $('#mapSvg'), snapshot = new Map();
+  svg.querySelectorAll('[data-map-node], [data-map-group]').forEach(el => {
+    let id;
+    if (el.hasAttribute('data-map-node')) id = 'node:' + el.dataset.mapNode;
+    else id = (el.tagName.toLowerCase() === 'rect' ? 'rect:' : 'label:') + el.dataset.mapGroup;
+    const attrs = el.hasAttribute('data-map-node') ? ['transform'] : el.tagName.toLowerCase() === 'rect' ? ['x','y','width','height'] : ['x','y'];
+    snapshot.set(id, {el, attrs, values: Object.fromEntries(attrs.map(a => [a, el.getAttribute(a)])), visible: !el.classList.contains('map-hidden')});
+  });
+  return snapshot;
+}
+function mapTranslate(value) {
+  const m = /translate\(\s*([-+\d.eE]+)[,\s]+([-+\d.eE]+)\s*\)/.exec(value || '');
+  return m ? [+m[1], +m[2]] : [0, 0];
+}
+function animateMapLayout(before, oldView, targetView) {
+  if (mapReducedMotion()) { mapView = targetView; applyMapView(); return; }
+  const after = mapGeometry(), changes = [];
+  for (const [id, finish] of after) {
+    const start = before.get(id);
+    if (!start || !finish.visible || !start.visible) continue;
+    for (const attr of finish.attrs) {
+      if (attr === 'transform') {
+        const from = mapTranslate(start.values.transform), to = mapTranslate(finish.values.transform);
+        if (from[0] !== to[0] || from[1] !== to[1]) changes.push({el:finish.el,attr,from,to});
+      } else {
+        const from = +start.values[attr], to = +finish.values[attr];
+        if (Number.isFinite(from) && Number.isFinite(to) && from !== to) changes.push({el:finish.el,attr,from,to});
+      }
+    }
+  }
+  const duration = 380, started = performance.now();
+  const anim = {frame:null}; mapAnimation = anim;
+  const ease = t => 1 - Math.pow(1-t,3);
+  $('#mapSvg').classList.add('map-animating');
+  function step(now) {
+    if (mapAnimation !== anim) return;
+    const t = Math.min(1,(now-started)/duration), v = ease(t);
+    for (const c of changes) {
+      if (c.attr === 'transform') c.el.setAttribute('transform', `translate(${c.from[0]+(c.to[0]-c.from[0])*v} ${c.from[1]+(c.to[1]-c.from[1])*v})`);
+      else c.el.setAttribute(c.attr, c.from+(c.to-c.from)*v);
+    }
+    mapView = Object.fromEntries(['x','y','w','h'].map(k => [k,oldView[k]+(targetView[k]-oldView[k])*v]));
+    applyMapView();
+    if (t < 1) anim.frame = requestAnimationFrame(step);
+    else { mapAnimation = null; $('#mapSvg').classList.remove('map-animating'); }
+  }
+  anim.frame = requestAnimationFrame(step);
+}
+function mapFitTarget(compact) {
+  const previous = {...mapView};
+  if (compact) fitCompactMap(); else fitMap();
+  const result = {...mapView}; mapView = previous; applyMapView();
+  return result;
+}
+function cancelMapClick() { clearTimeout(mapClickTimer); mapClickTimer = null; }
 function applyMapView() {
   const svg = $('#mapSvg');
   svg.setAttribute('viewBox', `${mapView.x} ${mapView.y} ${mapView.w} ${mapView.h}`);
@@ -2076,6 +2181,26 @@ function fitMap() {
   mapView = {x:(w-vw)/2, y:(h-vh)/2, w:vw, h:vh};
   applyMapView();
 }
+function fitCompactMap() {
+  if (!compactMapKey) return fitMap();
+  const svg = $('#mapSvg');
+  // The compact view updates visible file boundaries to enclose all related
+  // nodes. Fit those boundaries, not the original full-map dimensions.
+  const boxes = [...svg.querySelectorAll('rect[data-map-group]')]
+    .filter(el => !el.classList.contains('map-hidden') && !el.closest('.map-hidden'));
+  if (!boxes.length) return fitMap();
+  const left = Math.min(...boxes.map(el => +el.getAttribute('x')));
+  const top = Math.min(...boxes.map(el => +el.getAttribute('y')));
+  const right = Math.max(...boxes.map(el => +el.getAttribute('x') + +el.getAttribute('width')));
+  const bottom = Math.max(...boxes.map(el => +el.getAttribute('y') + +el.getAttribute('height')));
+  const pane = $('#mapScroll');
+  const ratio = Math.max(1, pane.clientWidth) / Math.max(1, pane.clientHeight);
+  const w = Math.max(180, (right - left) + 72);
+  const h = Math.max(100, (bottom - top) + 72);
+  const vw = Math.max(w, h * ratio), vh = vw / ratio;
+  mapView = { x: (left + right - vw) / 2, y: (top + bottom - vh) / 2, w: vw, h: vh };
+  applyMapView();
+}
 function zoomMap(factor, clientX, clientY) {
   const rect = $('#mapSvg').getBoundingClientRect();
   if (!rect.width || !rect.height) return;
@@ -2087,6 +2212,8 @@ function zoomMap(factor, clientX, clientY) {
   applyMapView();
 }
 function renderMap() {
+  stopMapAnimation();
+  restoreMapFocus();
   const svg = $('#mapSvg');
   const all = [], missing = new Map(), edges = [];
   for (const e of workspace) for (const [fid, f] of Object.entries(e.doc.flows))
@@ -2150,7 +2277,7 @@ function renderMap() {
         links.forEach(e=>{if(e.from===cand.key&&indegree.has(e.to))indegree.set(e.to,indegree.get(e.to)-1);});
       }
       ordered.forEach((n,i)=>positions.set(n.key,{x:x+20+(i%4)*254,y:y+56+Math.floor(i/4)*104}));
-      groups.push({x,y,w:islandW,h:island.h,name:island.id==='__missing__'?'Missing references':entryLabel(island.list[0].file)});
+      groups.push({id:island.id,x,y,w:islandW,h:island.h,name:island.id==='__missing__'?'Missing references':entryLabel(island.list[0].file)});
     }
     yAt+=rowHeights[row]+gapY;
   }
@@ -2163,7 +2290,7 @@ function renderMap() {
     return str===label?str:str.replace(/\s+$/,'')+'…';
   };
   let content=`<defs><marker id="mapArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="var(--link)"/></marker><marker id="mapMissArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="var(--danger)"/></marker></defs>`;
-  for(const group of groups)content+=`<rect class="map-file-group" x="${group.x}" y="${group.y}" width="${group.w}" height="${group.h}" rx="16"/><text class="map-group-label" x="${group.x+16}" y="${group.y+26}">${esc(clipName(group.name,FONT_LB,group.w-35))}</text>`;
+  for(const group of groups)content+=`<rect class="map-file-group" data-map-group="${esc(group.id)}" x="${group.x}" y="${group.y}" width="${group.w}" height="${group.h}" rx="16"/><text class="map-group-label" data-map-group="${esc(group.id)}" data-map-label="${esc(group.name)}" x="${group.x+16}" y="${group.y+26}">${esc(clipName(group.name,'700 12px JetBrains Mono, monospace',group.w-35))}</text>`;
   for(const edge of links) {
     const a=positions.get(edge.from),b=positions.get(edge.to);if(!a||!b)continue;
     let d;
@@ -2188,48 +2315,206 @@ function renderMap() {
   }
   for(const n of nodes) {
     const p=positions.get(n.key),active=n.file?.key===activeFileKey && n.fid===flowId();
-    const label=clipName(n.name,'600 13px Schibsted Grotesk, Arial, sans-serif',nodeW-26);
+    const label=clipName(n.name,'600 13px \"Schibsted Grotesk\", Arial, sans-serif',nodeW-28);
     const fileLabel=n.file?entryLabel(n.file):'Missing reference';
-    content+=`<g class="map-node${active?' map-active':''}" data-map-node="${esc(n.key)}"><rect class="map-box" x="${p.x}" y="${p.y}" width="${nodeW}" height="${nodeH}" rx="10" ${n.file?'':'stroke-dasharray="5 3" style="stroke:var(--danger)"'}/><text x="${p.x+12}" y="${p.y+40}">${esc(label)}</text><title>${esc(n.name)} — ${esc(fileLabel)}${n.file?' — click to open':' — unresolved'}</title></g>`;
+    content+=`<g class="map-node${active?' map-active':''}" data-map-node="${esc(n.key)}" data-map-file="${esc(n.file?.key||'__missing__')}"><rect class="map-box" x="${p.x}" y="${p.y}" width="${nodeW}" height="${nodeH}" rx="10" ${n.file?'':'stroke-dasharray="5 3" style="stroke:var(--danger)"'}/><text x="${p.x+12}" y="${p.y+40}">${esc(label)}</text><title>${esc(n.name)} — ${esc(fileLabel)}${n.file?' — click to focus, double-click to open':' — unresolved'}</title></g>`;
   }
   svg.innerHTML=content;
+  mapFocusOriginal = null; compactMapKey = null;
+  svg.classList.remove('map-hovering', 'map-compacting');
   $('#mapSummary').textContent=`${all.length} flows · ${edges.length} references · ${missing.size} missing`;
   requestAnimationFrame(fitMap);
 }
+// Focus changes only the temporary SVG geometry; the saved map layout is untouched.
+let mapFocusOriginal = null;
+function restoreMapFocus() {
+  if (!mapFocusOriginal) return;
+  for (const [element, data] of mapFocusOriginal) {
+    for (const [attr, value] of Object.entries(data)) {
+      if (attr === 'textContent') element.textContent = value;
+      else if (value === null) element.removeAttribute(attr);
+      else element.setAttribute(attr, value);
+    }
+  }
+  mapFocusOriginal = null;
+}
+function compactMapFlow(key) {
+  const svg = $('#mapSvg');
+  restoreMapFocus();
+  svg.classList.toggle('map-compacting', !!key);
+  const edges = [...svg.querySelectorAll('[data-map-from]')];
+  const nodes = [...svg.querySelectorAll('[data-map-node]')];
+  const nodeById = new Map(nodes.map(node => [node.dataset.mapNode, node]));
+  const linked = new Set(key ? [key] : []);
+  if (key) edges.forEach(edge => {
+    if (edge.dataset.mapFrom === key) linked.add(edge.dataset.mapTo);
+    if (edge.dataset.mapTo === key) linked.add(edge.dataset.mapFrom);
+  });
+  const shownFiles = new Set();
+  nodes.forEach(node => {
+    const id = node.dataset.mapNode, visible = !key || linked.has(id);
+    node.classList.toggle('map-hidden', !visible);
+    node.classList.toggle('map-focus', !!key && id === key);
+    node.classList.toggle('map-related', !!key && id !== key && linked.has(id));
+    node.classList.remove('map-dim');
+    if (visible) shownFiles.add(node.dataset.mapFile);
+  });
+  edges.forEach(edge => {
+    const connected = edge.dataset.mapFrom === key || edge.dataset.mapTo === key;
+    edge.classList.toggle('map-hidden', !!key && !connected);
+    edge.classList.toggle('map-related', !!key && connected);
+    edge.classList.remove('map-dim');
+  });
+  svg.querySelectorAll('[data-map-group]').forEach(item => {
+    item.classList.toggle('map-hidden', !!key && !shownFiles.has(item.dataset.mapGroup));
+  });
+  if (!key || !nodeById.has(key)) return;
+
+  // Group neighbours by source file and pack them in cells around the hovered
+  // flow. Keep its original x/y fixed, even when the original graph is huge.
+  const center = nodeById.get(key);
+  const originalXY = node => {
+    const rect = node.querySelector('rect.map-box');
+    return {x:+rect.getAttribute('x'), y:+rect.getAttribute('y')};
+  };
+  const anchor = originalXY(center), width = 224, height = 70;
+  const neighbours = [...linked].filter(id => id !== key && nodeById.has(id));
+  const homeFile = center.dataset.mapFile;
+  neighbours.sort((a,b) => {
+    const na=nodeById.get(a), nb=nodeById.get(b);
+    const ah=na.dataset.mapFile===homeFile?0:1, bh=nb.dataset.mapFile===homeFile?0:1;
+    return ah-bh || na.dataset.mapFile.localeCompare(nb.dataset.mapFile) || a.localeCompare(b);
+  });
+  const original = new Map();
+  const remember = (element, attrs) => {
+    if (!original.has(element)) original.set(element, {});
+    for (const attr of attrs) original.get(element)[attr] = attr === 'textContent' ? element.textContent : element.getAttribute(attr);
+  };
+  const positions = new Map([[key, anchor]]);
+  // Prefer nearby available positions inside the current viewport. Sorting
+  // by distance keeps all directly referenced flows close to the anchor.
+  const cellX = 290, cellY = 136, candidates = [];
+  const radius = Math.max(3, Math.ceil(Math.sqrt(neighbours.length))+1);
+  for (let y=-radius; y<=radius; y++) for(let x=-radius; x<=radius; x++) {
+    if (!x && !y) continue;
+    const px=anchor.x+x*cellX, py=anchor.y+y*cellY;
+    const inView = px>=mapView.x+12 && px+width<=mapView.x+mapView.w-12 &&
+      py>=mapView.y+12 && py+height<=mapView.y+mapView.h-12;
+    candidates.push({x:px,y:py,rank:x*x+y*y,offscreen:!inView});
+  }
+  candidates.sort((a,b)=>a.rank-b.rank || Number(a.offscreen)-Number(b.offscreen) || a.y-b.y || a.x-b.x);
+  // If a fit-to-screen overview makes every candidate technically visible,
+  // distance is the only priority; the hovered flow never moves.
+  neighbours.forEach((id,i) => positions.set(id,{x:candidates[i].x,y:candidates[i].y}));
+  for (const id of neighbours) {
+    const node=nodeById.get(id), from=originalXY(node), to=positions.get(id);
+    remember(node,['transform']);
+    node.setAttribute('transform',`translate(${to.x-from.x} ${to.y-from.y})`);
+  }
+  // Redraw the visible connections between relocated nodes. Original path
+  // geometry is restored immediately when hover ends.
+  edges.forEach(edge => {
+    if (edge.classList.contains('map-hidden')) return;
+    const from=positions.get(edge.dataset.mapFrom), to=positions.get(edge.dataset.mapTo);
+    if (!from || !to) return;
+    const path = from.x===to.x && from.y===to.y
+      ? `M${from.x+width-16} ${from.y} C${from.x+width+55} ${from.y-65},${from.x+width-55} ${from.y-65},${from.x+width-4} ${from.y}`
+      : (()=>{
+        const right=to.x>=from.x;
+        const x1=right?from.x+width:from.x, y1=from.y+height/2;
+        const x2=right?to.x:to.x+width, y2=to.y+height/2;
+        const d=right?1:-1, bend=Math.max(48,Math.abs(x2-x1)*.42);
+        return `M${x1} ${y1} C${x1+d*bend} ${y1},${x2-d*bend} ${y2},${x2} ${y2}`;
+      })();
+    remember(edge,['d']);edge.setAttribute('d',path);
+  });
+  // Shrink and relocate each visible file container to its relevant flows.
+  for (const file of shownFiles) {
+    const list=[...positions].filter(([id])=>nodeById.get(id)?.dataset.mapFile===file).map(([,p])=>p);
+    if (!list.length) continue;
+    const left=Math.min(...list.map(p=>p.x))-16, top=Math.min(...list.map(p=>p.y))-42;
+    const right=Math.max(...list.map(p=>p.x+width))+16;
+    const bottom=Math.max(...list.map(p=>p.y+height))+16;
+    svg.querySelectorAll('[data-map-group]').forEach(item=>{
+      if(item.dataset.mapGroup!==file) return;
+      if(item.tagName.toLowerCase()==='rect') {
+        remember(item,['x','y','width','height']);
+        item.setAttribute('x',left);item.setAttribute('y',top);
+        item.setAttribute('width',right-left);item.setAttribute('height',bottom-top);
+      } else if(item.tagName.toLowerCase()==='text') {
+        remember(item,['x','y','textContent']);item.setAttribute('x',left+16);item.setAttribute('y',top+26);
+        // Never let long file paths overflow a focused file container.
+        const raw = item.dataset.mapLabel || item.textContent;
+        const available = Math.max(24, right-left-35);
+        let label = raw;
+        while(label.length > 1 && tw(label, '700 12px JetBrains Mono, monospace') > available) label=label.slice(0,-1);
+        item.textContent = label === raw ? raw : label.trimEnd() + '…';
+      }
+    });
+  }
+  mapFocusOriginal = original;
+}
+
+let compactMapKey = null;
+let lastMapViewTab = 'design';
 function highlightMapFlow(key) {
   const svg = $('#mapSvg');
   svg.classList.toggle('map-hovering', !!key);
   const edges = [...svg.querySelectorAll('[data-map-from]')];
-  const linked = new Set([key]);
-  if (key) edges.forEach((edge) => {
+  const linked = new Set(key ? [key] : []);
+  if (key) edges.forEach(edge => {
     if (edge.dataset.mapFrom === key) linked.add(edge.dataset.mapTo);
     if (edge.dataset.mapTo === key) linked.add(edge.dataset.mapFrom);
   });
-  svg.querySelectorAll('[data-map-node]').forEach((node) => {
-    node.classList.toggle('map-focus', !!key && node.dataset.mapNode === key);
-    node.classList.toggle('map-related', !!key && node.dataset.mapNode !== key && linked.has(node.dataset.mapNode));
-    node.classList.toggle('map-dim', !!key && !linked.has(node.dataset.mapNode));
+  svg.querySelectorAll('[data-map-node]').forEach(node => {
+    const id = node.dataset.mapNode;
+    node.classList.toggle('map-focus', !!key && id === key);
+    node.classList.toggle('map-related', !!key && id !== key && linked.has(id));
+    node.classList.toggle('map-dim', !!key && !linked.has(id));
   });
-  edges.forEach((edge) => {
-    const connected = edge.dataset.mapFrom === key || edge.dataset.mapTo === key;
-    edge.classList.toggle('map-related', !!key && connected);
-    edge.classList.toggle('map-dim', !!key && !connected);
+  edges.forEach(edge => {
+    const related = !!key && (edge.dataset.mapFrom === key || edge.dataset.mapTo === key);
+    edge.classList.toggle('map-related', related);
+    edge.classList.toggle('map-dim', !!key && !related);
   });
 }
+function toggleCompactMap(key) {
+  cancelMapClick();
+  stopMapAnimation();
+  const before = mapGeometry(), oldView = {...mapView};
+  highlightMapFlow(null);
+  if (compactMapKey === key) {
+    compactMapKey = null;
+    compactMapFlow(null);
+  } else {
+    compactMapKey = key;
+    compactMapFlow(key);
+  }
+  $('#mapSvg').querySelectorAll('[data-map-node]').forEach(node => {
+    const selected = !!compactMapKey && node.dataset.mapNode === compactMapKey;
+    node.classList.toggle('map-selected', selected);
+    node.setAttribute('aria-selected', String(selected));
+  });
+  const targetView = mapFitTarget(!!compactMapKey);
+  animateMapLayout(before, oldView, targetView);
+}
 function openMapFlow(encoded) {
+  stopMapAnimation();
   if (encoded.startsWith('missing:')) { toastError('This reference has no matching flow.'); return; }
   const x=decodeTarget(encoded);
   if (!entryByKey(x.fileKey)?.doc.flows[x.fid]) return;
-  nav=[x];activateEntry(x.fileKey);sel=null;setTab('design');
+  nav=[x];activateEntry(x.fileKey);sel=null;setTab(lastMapViewTab);
 }
 
 // ---------- tabs ----------
 function setTab(t) {
+  cancelMapClick();
   if (tab === 'yaml' && t !== 'yaml' && yamlInvalid) toastError('The YAML has errors. Design and Preview show the last valid version.');
+  if (t === 'design' || t === 'preview') lastMapViewTab = t;
   tab = t;
   $('#body').classList.remove('yaml-files-open');
   $('#btnYamlFiles').setAttribute('aria-expanded', 'false');
-  try { localStorage.setItem(STORE_TAB, t); } catch (e) {}
+  try { localStorage.setItem(STORE_TAB, t); if (t === 'design' || t === 'preview') localStorage.setItem('lifeline.v1.mapReturnTab', t); } catch (e) {}
   if (t === 'preview' && sel && sel.kind === 'flow') sel = null;
   render(true);
   if (t === 'yaml') { syncYaml(); setTimeout(() => yamlEd && yamlEd.layout(), 0); }
@@ -2732,19 +3017,95 @@ async function openDropped(dataTransfer) {
 }
 
 // ---------- wiring ----------
+const RAIL_WIDTH_KEY = 'lifeline.v1.railWidth';
+function railMaxWidth() { return Math.max(240, Math.min(600, window.innerWidth - 430)); }
+function setRailWidth(width, persist = true) {
+  const w = Math.max(240, Math.min(railMaxWidth(), Math.round(width)));
+  $('#body').style.setProperty('--rail-width', `${w}px`);
+  $('#railResizer').setAttribute('aria-valuenow', String(w));
+  $('#railResizer').setAttribute('aria-valuemax', String(railMaxWidth()));
+  if (persist) { try { localStorage.setItem(RAIL_WIDTH_KEY, String(w)); } catch (_) {} }
+}
+function wireRailResizer() {
+  const grip = $('#railResizer');
+  let pointer = null;
+  grip.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || isNarrow()) return;
+    e.preventDefault();
+    pointer = e.pointerId;
+    grip.setPointerCapture(pointer);
+    $('#body').classList.add('rail-resizing');
+  });
+  grip.addEventListener('pointermove', e => { if (pointer === e.pointerId) setRailWidth(e.clientX - $('#body').getBoundingClientRect().left); });
+  const finish = e => {
+    if (pointer !== e.pointerId) return;
+    pointer = null;
+    $('#body').classList.remove('rail-resizing');
+    if (grip.hasPointerCapture(e.pointerId)) grip.releasePointerCapture(e.pointerId);
+  };
+  grip.addEventListener('pointerup', finish);
+  grip.addEventListener('pointercancel', finish);
+  grip.addEventListener('dblclick', () => setRailWidth(320));
+  grip.addEventListener('keydown', e => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home'].includes(e.key)) return;
+    e.preventDefault();
+    const current = parseFloat(getComputedStyle($('#body')).getPropertyValue('--rail-width')) || 320;
+    setRailWidth(e.key === 'Home' ? 320 : current + (e.key === 'ArrowLeft' ? -20 : 20));
+  });
+  window.addEventListener('resize', () => {
+    if (isNarrow()) return;
+    const current = parseFloat(getComputedStyle($('#body')).getPropertyValue('--rail-width')) || 320;
+    setRailWidth(current, false);
+  });
+  let saved = 320;
+  try { saved = Number(localStorage.getItem(RAIL_WIDTH_KEY)) || 320; } catch (_) {}
+  setRailWidth(saved, false);
+}
+
 function wire() {
+  wireRailResizer();
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
-  $('#btnMap').addEventListener('click', () => setTab(tab === 'map' ? 'design' : 'map'));
-  $('#mapReset').addEventListener('click', fitMap);
+  $('#btnMap').addEventListener('click', () => setTab(tab === 'map' ? lastMapViewTab : 'map'));
+  $('#mapReset').addEventListener('click', () => compactMapKey ? fitCompactMap() : fitMap());
   $('#mapZoomIn').addEventListener('click', () => zoomMap(.8));
   $('#mapZoomOut').addEventListener('click', () => zoomMap(1.25));
   $('#mapScroll').addEventListener('wheel', e => { e.preventDefault();zoomMap(e.deltaY>0?1.12:1/1.12,e.clientX,e.clientY); },{passive:false});
-  $('#mapScroll').addEventListener('pointerdown',e=>{if(e.button!==0||e.target.closest('[data-map-node]'))return;mapPointer={x:e.clientX,y:e.clientY};$('#mapScroll').setPointerCapture(e.pointerId);$('#mapScroll').classList.add('dragging');});
-  $('#mapScroll').addEventListener('pointermove',e=>{if(!mapPointer)return;const rect=$('#mapSvg').getBoundingClientRect();mapView.x-=(e.clientX-mapPointer.x)*mapView.w/rect.width;mapView.y-=(e.clientY-mapPointer.y)*mapView.h/rect.height;mapPointer={x:e.clientX,y:e.clientY};applyMapView();});
-  const endMapPan=()=>{mapPointer=null;$('#mapScroll').classList.remove('dragging');};
-  $('#mapScroll').addEventListener('pointerup',endMapPan);
-  $('#mapScroll').addEventListener('pointercancel',endMapPan);
-  $('#mapSvg').addEventListener('click', (e) => { const n=e.target.closest('[data-map-node]'); if(n)openMapFlow(n.dataset.mapNode); });
+  $('#mapScroll').addEventListener('pointerdown',e=>{
+    if(e.button!==0||e.target.closest('[data-map-node]'))return;
+    mapPointer={x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY};
+    mapPanMoved=false;
+    $('#mapScroll').setPointerCapture(e.pointerId);
+  });
+  $('#mapScroll').addEventListener('pointermove',e=>{
+    if(!mapPointer)return;
+    if(!mapPanMoved && Math.hypot(e.clientX-mapPointer.startX,e.clientY-mapPointer.startY)<5)return;
+    mapPanMoved=true;
+    $('#mapScroll').classList.add('dragging');
+    const rect=$('#mapSvg').getBoundingClientRect();
+    mapView.x-=(e.clientX-mapPointer.x)*mapView.w/Math.max(1,rect.width);
+    mapView.y-=(e.clientY-mapPointer.y)*mapView.h/Math.max(1,rect.height);
+    mapPointer.x=e.clientX;mapPointer.y=e.clientY;applyMapView();
+  });
+  $('#mapScroll').addEventListener('pointerup',e=>{
+    if(!mapPointer)return;
+    const clicked=!mapPanMoved;
+    mapPointer=null;$('#mapScroll').classList.remove('dragging');
+    if($('#mapScroll').hasPointerCapture(e.pointerId))$('#mapScroll').releasePointerCapture(e.pointerId);
+    if(clicked && compactMapKey)toggleCompactMap(null);
+  });
+  $('#mapScroll').addEventListener('pointercancel',()=>{mapPointer=null;mapPanMoved=false;$('#mapScroll').classList.remove('dragging');});
+  $('#mapSvg').addEventListener('click', (e) => {
+    const n = e.target.closest('[data-map-node]');
+    if (!n || n.dataset.mapNode.startsWith('missing:')) return;
+    cancelMapClick();
+    const key = n.dataset.mapNode;
+    mapClickTimer = setTimeout(() => { mapClickTimer = null; if (tab === 'map') toggleCompactMap(key); }, 280);
+  });
+  $('#mapSvg').addEventListener('dblclick', (e) => {
+    cancelMapClick();
+    const n = e.target.closest('[data-map-node]');
+    if (n) { e.preventDefault(); openMapFlow(n.dataset.mapNode); }
+  });
   $('#mapSvg').addEventListener('pointerover', (e) => { const n=e.target.closest('[data-map-node]'); if(n)highlightMapFlow(n.dataset.mapNode); });
   $('#mapSvg').addEventListener('pointerout', (e) => { const n=e.target.closest('[data-map-node]'); if(n && !n.contains(e.relatedTarget)) highlightMapFlow(null); });
   $('#btnUndo').addEventListener('click', undo);
@@ -2934,7 +3295,7 @@ async function boot() {
       hasBrowserDrafts = true;
     }
   } catch (_) {}
-  try { const t = localStorage.getItem(STORE_TAB); if (['yaml', 'design', 'preview', 'map'].includes(t)) tab = t; } catch (_) {}
+  try { const t = localStorage.getItem(STORE_TAB); if (['yaml', 'design', 'preview', 'map'].includes(t)) tab = t; const last = localStorage.getItem('lifeline.v1.mapReturnTab'); if (['design', 'preview'].includes(last)) lastMapViewTab = last; else if (['design', 'preview'].includes(t)) lastMapViewTab = t; } catch (_) {}
   if (isNarrow()) zoom = .8;
   await restoreHandles();
   wire(); render(true); setStatus(); updateRestore(); loadMonaco();
