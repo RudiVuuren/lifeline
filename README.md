@@ -9,7 +9,8 @@ Lifeline is a sequence diagram builder that stores everything as YAML. Diagrams 
 - Three views: **YAML** (Monaco editor), **Design** (drag to build) and **Preview** (read-only, single-click links).
 - Flows sit side by side. Linked steps and participants are drawn as hyperlinks that open the target flow.
 - Each item has notes. Steps can also carry **badges**: `request`/`response` payloads (YAML) and `<entity>: <status>` markers.
-- The diagram saves in the browser. Use **File → Copy YAML** or **File → Copy share link** to take it elsewhere.
+- The diagram saves in the browser. **File → Open file…** opens a `.yaml` file, and in Chrome and Edge every edit is saved straight back to it (the chip next to the title shows the save state). **Save as…** links the diagram to a new file, and **Download** saves a copy in any browser.
+- **File → Copy YAML** and **Copy share link** take the diagram elsewhere.
 
 ## Open a diagram from a link
 

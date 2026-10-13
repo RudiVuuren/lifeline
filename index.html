@@ -71,10 +71,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: -.01em; font-size: 15px; }
 .brand svg { display: block; }
+.title-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.file-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 260px; flex: 0 1 auto; height: 26px;
+  padding: 0 9px; border: 1px solid var(--rule); border-radius: 13px; background: var(--surface); color: var(--muted);
+  font: 500 11.5px var(--f-mono); cursor: default; white-space: nowrap;
+}
+.file-chip .fn { overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.file-chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+.file-chip[data-state="saving"] i { background: var(--warn); }
+.file-chip[data-state="blocked"], .file-chip[data-state="error"] { cursor: pointer; border-color: var(--danger); }
+.file-chip[data-state="blocked"] i, .file-chip[data-state="error"] i { background: var(--danger); }
+.file-chip[data-state="blocked"] .st, .file-chip[data-state="error"] .st { color: var(--danger); }
 .doc-title {
   min-width: 0; width: 100%; max-width: 360px; border: 1px solid transparent; background: transparent;
   padding: 5px 8px; border-radius: 6px; font-weight: 500; color: var(--muted);
 }
+.title-wrap .doc-title { width: auto; flex: 0 1 auto; }
 .doc-title:hover { border-color: var(--line); }
 .doc-title:focus { border-color: var(--accent); color: var(--ink); background: var(--surface); outline: none; }
 .tabs { display: flex; background: var(--bg); border: 1px solid var(--rule); border-radius: 9px; padding: 3px; gap: 2px; }
@@ -409,7 +422,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
       </svg>
       <span class="wm">Lifeline</span>
     </div>
-    <input class="doc-title" id="docTitle" aria-label="Diagram title" spellcheck="false">
+    <div class="title-wrap">
+      <input class="doc-title" id="docTitle" aria-label="Diagram title" spellcheck="false">
+      <button type="button" class="file-chip" id="fileChip" hidden></button>
+    </div>
     <nav class="tabs" role="tablist" aria-label="View">
       <button class="tab" role="tab" data-tab="yaml" id="tab-yaml">YAML</button>
       <button class="tab" role="tab" data-tab="design" id="tab-design">Design</button>
@@ -420,9 +436,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
       <button class="ibtn" id="btnRedo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 3l3 3-3 3"/><path d="M13.5 6h-7a4 4 0 0 0 0 8H9"/></svg></button>
       <button class="ibtn" id="btnFile" aria-haspopup="true" aria-expanded="false">File <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 6 4 4 4-4"/></svg></button>
       <div class="menu" id="fileMenu" hidden>
+        <button data-cmd="open">Open file… <small>Ctrl+O</small></button>
+        <button data-cmd="save" class="fs-only">Save <small>Ctrl+S</small></button>
+        <button data-cmd="saveas" class="fs-only">Save as… <small>.yaml</small></button>
+        <button data-cmd="download" class="dl-only">Download <small>.yaml</small></button>
+        <button data-cmd="unlink" id="cmdUnlink" hidden>Stop saving to file</button>
+        <hr>
         <button data-cmd="copy">Copy YAML <small>clipboard</small></button>
         <button data-cmd="share">Copy share link <small>URL</small></button>
-        <button data-cmd="open">Open YAML file… <small>.yaml</small></button>
         <hr>
         <button data-cmd="new">New diagram</button>
         <button data-cmd="example">Load example</button>
@@ -844,6 +865,7 @@ let saveT = null;
 function save() {
   clearTimeout(saveT);
   saveT = setTimeout(() => { try { localStorage.setItem(STORE, toYaml(doc)); } catch (e) { /* storage unavailable */ } }, 250);
+  scheduleFileSave();
 }
 function commit(fn, opt = {}) {
   const now = Date.now();
@@ -882,8 +904,10 @@ function syncYaml() {
 }
 
 // ---------- rendering ----------
+function fitTitle() { const t = $('#docTitle'); t.style.width = `${Math.min(360, Math.max(80, tw(t.value || ' ', '500 14px "Schibsted Grotesk", Arial, sans-serif') + 30))}px`; }
 function render(withInspector) {
   $('#docTitle').value !== doc.title && document.activeElement !== $('#docTitle') && ($('#docTitle').value = doc.title);
+  fitTitle();
   renderTabs(); renderRail(); renderCrumbs(); renderTools(); renderDiagram();
   if (withInspector) renderInspector();
   layoutClasses();
@@ -1732,6 +1756,7 @@ function loadMonaco() {
 
 // ---------- file commands ----------
 function loadText(text, label) {
+  setFileHandle(null);
   try {
     const { doc: nd, warnings } = normalize(jsyaml.load(text));
     commit(() => { doc = nd; nav = [Object.keys(nd.flows)[0]]; sel = null; });
@@ -1754,7 +1779,11 @@ async function copyYaml() {
 function fileCmd(cmd) {
   $('#fileMenu').hidden = true; $('#btnFile').setAttribute('aria-expanded', 'false');
   if (cmd === 'copy') copyYaml();
-  if (cmd === 'open') $('#fileInput').click();
+  if (cmd === 'open') openFile();
+  if (cmd === 'save') saveFile();
+  if (cmd === 'saveas') saveFileAs();
+  if (cmd === 'download') downloadYaml();
+  if (cmd === 'unlink') { const n = fileHandle && fileHandle.name; setFileHandle(null); toast(`Stopped saving to ${n}. Your edits stay in this browser.`); }
   if (cmd === 'new') confirmModal('Start a new diagram?', 'The current diagram is replaced. You can undo this, or copy its YAML first.', 'New diagram', () => {
     loadText('title: Untitled diagram\nflows:\n  main:\n    name: Main flow\n    participants: []\n    messages: []\n', 'New diagram');
   });
@@ -1764,6 +1793,100 @@ function fileCmd(cmd) {
     if (prev) confirmModal('Restore your previous diagram?', 'This brings back the diagram you had open before the last one opened from a link. The current diagram is replaced, and you can undo this.', 'Restore', () => loadText(prev, 'Previous diagram restored'));
   }
   if (cmd === 'example') confirmModal('Load the example?', 'The card payment example replaces the current diagram. You can undo this.', 'Load example', () => loadText(EXAMPLE, 'Example loaded'));
+}
+
+// ---------- files: open, save back to the opened file, download ----------
+// Chrome and Edge support the File System Access API, so edits save straight back to the opened file.
+// Other browsers fall back to a plain file picker for opening and Download for saving.
+const IN_FRAME = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+// Embedded frames (such as a Claude artifact) block file pickers and downloads, so those commands are hidden there.
+const FS_API = !IN_FRAME && typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function';
+const YAML_TYPES = [{ description: 'Lifeline diagram (YAML)', accept: { 'text/yaml': ['.yaml', '.yml'] } }];
+let fileHandle = null, fileState = 'saved', fileSaveT = null, fileWriting = null, fileDirty = false;
+const fileName = () => `${slug(doc.title) || 'diagram'}.yaml`;
+function setFileHandle(h) {
+  fileHandle = h; fileDirty = false; clearTimeout(fileSaveT);
+  setFileState('saved');
+}
+function setFileState(st) {
+  fileState = st;
+  const chip = $('#fileChip');
+  chip.hidden = !fileHandle;
+  $('#cmdUnlink').hidden = !fileHandle;
+  if (!fileHandle) return;
+  const label = { saved: 'Saved', saving: 'Saving…', blocked: 'Allow saving', error: 'Save failed · retry' }[st];
+  chip.dataset.state = st;
+  chip.innerHTML = `<i></i><span class="fn">${esc(fileHandle.name)}</span><span class="st">${label}</span>`;
+  chip.title = st === 'blocked' ? 'Click to give Lifeline permission to save to this file' : st === 'error' ? 'Click to try saving again' : 'Edits save to this file automatically';
+}
+function scheduleFileSave() {
+  if (!fileHandle) return;
+  fileDirty = true;
+  if (fileState === 'saved') setFileState('saving');
+  clearTimeout(fileSaveT);
+  fileSaveT = setTimeout(() => writeFile(false), 600);
+}
+async function writeFile(fromGesture) {
+  const h = fileHandle;
+  if (!h) return true;
+  if (fileWriting) { await fileWriting; if (!fileDirty && !fromGesture) return true; }
+  const run = (async () => {
+    try {
+      let perm = await h.queryPermission({ mode: 'readwrite' });
+      if (perm !== 'granted' && fromGesture) perm = await h.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') { if (h === fileHandle) setFileState('blocked'); return false; }
+      fileDirty = false;
+      const w = await h.createWritable();
+      await w.write(toYaml(doc));
+      await w.close();
+      if (h === fileHandle) setFileState(fileDirty ? 'saving' : 'saved');
+      return true;
+    } catch (e) {
+      if (h === fileHandle) setFileState('error');
+      return false;
+    }
+  })();
+  fileWriting = run;
+  const ok = await run;
+  fileWriting = null;
+  if (ok && fileDirty && h === fileHandle) scheduleFileSave();
+  return ok;
+}
+async function openFile() {
+  if (!FS_API) { $('#fileInput').click(); return; }
+  let h;
+  try { [h] = await window.showOpenFilePicker({ types: YAML_TYPES, multiple: false }); }
+  catch (e) { if (e && e.name === 'AbortError') return; $('#fileInput').click(); return; }
+  // Ask for write access while the click still counts as a user gesture.
+  let perm = 'prompt';
+  try { perm = await h.requestPermission({ mode: 'readwrite' }); } catch (e) {}
+  let text;
+  try { text = await (await h.getFile()).text(); }
+  catch (e) { toast(`Couldn't read ${h.name}.`); return; }
+  if (!loadText(text, `Opened ${h.name}`)) return;
+  setFileHandle(h);
+  if (perm !== 'granted') setFileState('blocked');
+}
+async function saveFile() {
+  if (!FS_API) return downloadYaml();
+  if (!fileHandle) return saveFileAs();
+  clearTimeout(fileSaveT);
+  if (await writeFile(true)) toast(`Saved to ${fileHandle.name}.`);
+}
+async function saveFileAs() {
+  if (!FS_API) return downloadYaml();
+  let h;
+  try { h = await window.showSaveFilePicker({ suggestedName: fileHandle ? fileHandle.name : fileName(), types: YAML_TYPES }); }
+  catch (e) { if (!e || e.name !== 'AbortError') toast("Couldn't open the save dialog here. Use Download instead."); return; }
+  setFileHandle(h);
+  if (await writeFile(true)) toast(`Saved to ${h.name}. Edits now save there automatically.`);
+}
+function downloadYaml() {
+  const url = URL.createObjectURL(new Blob([toYaml(doc)], { type: 'text/yaml' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = fileHandle ? fileHandle.name : fileName();
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ---------- links: open a diagram from the URL, copy a share link ----------
@@ -1857,13 +1980,17 @@ function wire() {
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('#fileMenu')) { $('#fileMenu').hidden = true; $('#btnFile').setAttribute('aria-expanded', 'false'); } });
   $('#fileMenu').querySelectorAll('[data-cmd]').forEach((b) => b.addEventListener('click', () => fileCmd(b.dataset.cmd)));
+  $('#fileChip').addEventListener('click', () => { if (fileState === 'blocked' || fileState === 'error') saveFile(); });
+  if (!FS_API) document.querySelectorAll('.fs-only').forEach((b) => { b.hidden = true; });
+  if (IN_FRAME) document.querySelectorAll('.dl-only').forEach((b) => { b.hidden = true; });
+  window.addEventListener('beforeunload', (e) => { if (fileHandle && (fileDirty || fileWriting)) { e.preventDefault(); e.returnValue = ''; } });
   $('#fileInput').addEventListener('change', (e) => {
     const file = e.target.files[0]; if (!file) return;
     const r = new FileReader();
     r.onload = () => loadText(String(r.result), `Opened ${file.name}`);
     r.readAsText(file); e.target.value = '';
   });
-  $('#docTitle').addEventListener('input', (e) => commit(() => { doc.title = e.target.value; }, { key: 'title', inspector: false }));
+  $('#docTitle').addEventListener('input', (e) => { fitTitle(); commit(() => { doc.title = e.target.value; }, { key: 'title', inspector: false }); });
   $('#btnAddFlow').addEventListener('click', addFlow);
   wireEditorPane();
   window.addEventListener('hashchange', importFromUrl);
@@ -1891,6 +2018,9 @@ function wire() {
   $('#modal').addEventListener('click', (e) => { if (e.target === $('#modal')) closeModal(); });
   document.addEventListener('keydown', (e) => {
     const inField = e.target.closest && e.target.closest('input, textarea, select, .monaco-editor, [contenteditable]');
+    const cmdKey = (e.metaKey || e.ctrlKey) && !e.altKey ? e.key.toLowerCase() : '';
+    if (cmdKey === 's') { e.preventDefault(); e.shiftKey ? saveFileAs() : saveFile(); return; }
+    if (cmdKey === 'o') { e.preventDefault(); openFile(); return; }
     if (e.key === 'Escape') { if (!$('#modal').hidden) return closeModal(); if (sel && !inField) { select(null); } return; }
     if (inField || !$('#modal').hidden) return;
     const mod = e.metaKey || e.ctrlKey;
