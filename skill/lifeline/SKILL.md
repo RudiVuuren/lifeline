@@ -1,162 +1,132 @@
 ---
 name: lifeline-diagrams
-description: Create sequence diagrams for Lifeline (rudivuuren.github.io/lifeline) as YAML, with linked flows, payload and status badges, and a link that opens the diagram. Use when asked for a sequence diagram, a flow between systems, or a Lifeline diagram.
+description: Create, review, and edit YAML sequence diagrams for Lifeline, with multiple flows, cross-file references, message payload and status badges. Use for sequence diagrams, system interactions, workflow breakdowns, or Lifeline YAML files.
 ---
 
 # Lifeline diagrams
 
-Lifeline is a sequence diagram tool that stores diagrams as YAML. A file holds several **flows**, and each flow is one sequence diagram. Any step or participant can **link** to another flow, so a reader can click from an overview into the detail. The app is hosted at https://rudivuuren.github.io/lifeline/.
+Lifeline is a browser-based YAML sequence-diagram editor at https://rudivuuren.github.io/lifeline/. Each YAML file contains one or more **flows**. Messages and participants can link to other flows in the same file or another loaded YAML file. The app also offers a **Map** view of flow references.
 
 ## Workflow
 
-1. **Plan the flows.** Start with an overview flow. Every step that hides real complexity gets its own flow, which the step links to. Keep each flow to about 4–8 participants and 6–15 steps.
-2. **Write the YAML** following the format and rules below. Save it as `<diagram-name>.yaml` if you can create files.
-3. **Check it.**
-   - If you can run code, run `python scripts/lifeline.py <file>.yaml`. It reports errors and warnings, and when there are no errors it prints a link. Fix the errors and run it again.
-   - If you can't run code, go through the checklist at the end of this file.
-4. **Deliver:**
-   - the `.yaml` file, or the YAML in a code block if you can't create files
-   - a Lifeline link on its own line, built as described in [Links](#links)
-
-   Tell the user they can open the file in Lifeline with **File → Open file…**. In Chrome or Edge, their edits then save back to that file.
+1. **Plan the flows.** Put a readable overview first. Give complex steps their own flows and link to them; aim for roughly 4–8 participants and 6–15 messages per flow.
+2. **Produce valid YAML** in the format below. Save it as `<diagram-name>.yaml` when file creation is available, otherwise provide a YAML code block. When the user needs several files, create separate YAML files with cross-file links.
+3. **Check the YAML** for syntax, unique IDs, valid participant references, and flow references using the checklist below. Validate by parsing YAML where available.
+4. **Deliver** the YAML file(s) and instruct the user to open them through **File → Open file…** or **File → Open folder…** in Lifeline.
 
 ## Format
 
 ```yaml
-title: Card payments            # name of the whole diagram
-flows:                          # the first flow listed opens first; put the overview first
-  card-payment:                 # flow id
-    name: Card payment          # display name
-    notes: Optional plain text.
-    participants:               # left-to-right order
-      - id: customer            # unique within this flow
+title: Card payments
+flows:
+  card-payment:
+    name: Card payment
+    notes: End-to-end payment overview.
+    participants:
+      - id: customer
         name: Customer
-        type: actor             # optional, see shapes
-        link: <flow id>         # optional: clicking the participant opens that flow
-        notes: Optional plain text.
-    messages:                   # top-to-bottom order; these are the steps
-      - id: m1                  # unique within this flow: m1, m2, m3…
-        from: customer          # participant id in this flow
-        to: checkout            # participant id in this flow; equal to from for a self-call
-        label: Pay R 1 249.00
-        kind: reply             # optional: omit for a request, reply for a response
-        link: <flow id>         # optional: clicking the step opens that flow
-        notes: Optional plain text.
-        badges: []              # optional, see Badges
+        type: actor
+      - id: checkout
+        name: Checkout UI
+      - id: payments
+        name: Payments API
+    messages:
+      - id: m1
+        from: customer
+        to: checkout
+        label: Submit payment
+      - id: m2
+        from: checkout
+        to: payments
+        label: POST /payments
+        link: payment-processing
+        badges:
+          - name: request
+            type: yaml
+            color: blue
+            content: |-
+              orderId: ORD-20931
+              amount: 124900
+              currency: ZAR
+      - id: m3
+        from: payments
+        to: checkout
+        label: 201 Created
+        kind: reply
+  payment-processing:
+    name: Payment processing
+    participants:
+      - id: payments
+        name: Payments API
+      - id: ledger
+        name: Ledger
+        type: database
+    messages:
+      - id: m1
+        from: payments
+        to: ledger
+        label: Post hold
 ```
 
-**Shapes** (`type`):
+**Schema:** `title` is the overall document title; `flows` maps internal flow IDs to objects with `name`, optional `notes`, `participants`, and `messages`. Participants have `id`, `name`, optional `type`, `link`, `notes`. Messages have `id`, `from`, `to`, `label`, optional `kind`, `link`, `notes`, `badges`.
 
-| Shape | Use it for |
-|---|---|
-| `participant` | Services, apps and components. This is the default, so omit it. |
-| `actor` | A person or role |
-| `database` | Databases, caches, ledgers, file stores |
-| `queue` | Queues, topics, event buses |
-| `external` | Third-party or out-of-scope systems |
+**Participant shapes:** `participant` (default), `actor`, `database`, `queue`, `external`.
 
-**Arrows** (`kind`):
+**Message styles:** omit `kind` (equivalent to `sync`) for a solid request; use `reply` for a dashed response, or `async` for an asynchronous message with an open arrowhead.
 
-| Value | How it's drawn | Use it for |
-|---|---|---|
-| omitted (or `sync`) | Request: solid line, filled head | Any call or message sent |
-| `reply` | Response: dashed line, filled head | The answer to an earlier request |
+## Complete example workspace
 
-Don't use `async`; it is deprecated. Model fire-and-forget events as a request with no matching response.
+The three files in `references/` form one comprehensive, multi-file example. When generating a rich example or checking the available features, read these together:
+
+- `references/payment-overview.yaml` — overview, sibling flow, all main participant shapes, participant and message drill-down links, notes, YAML request/response/event payloads, status badges, solid/dashed/asynchronous arrows.
+- `references/payment-processing.yaml` — several linked detail flows, self-calls, risk checks, ledger updates, cross-file navigation, more badge colours.
+- `references/payment-operations.yaml` — queue-to-worker delivery, return link to another file, and one **deliberately unresolved** reference (`future-integrations#risk-review`) to demonstrate red missing hyperlinks, explanatory toast and a missing node on the Map. Do not treat that deliberate link as an unintentional validation error.
+
+Open the three `.yaml` files together using **File → Open folder…** to enable cross-file references. Example files represent YAML content, not browser UI settings: file creation, sync toggles, per-file sync persistence, Map hovering, and local-storage behaviour are application features rather than YAML properties. Do not invent YAML keys for them.
+
+## References and links
+
+- For a flow in the same file, use `link: flow-id`.
+- For a flow in another loaded file, use `link: "other-file#flow-id"` (file name without `.yaml` is supported). Quote the value.
+- A message or participant can link to a flow. Don't confuse the visible flow name with its internal ID in YAML.
+- Unresolved references remain red, underlined, and clickable in the app. Clicking one displays an explanation; it does not create the missing flow. When authoring, check that linked targets exist in the intended set of files.
+- The **Map** view draws flows across loaded files and their directed references; missing targets are shown separately. Use it to inspect connectivity.
 
 ## Badges
 
-Badges are small coloured tags drawn under a step's arrow. The name shows on the diagram, and the content opens when the reader clicks the badge. Use them for exactly two things.
+Badges belong on messages, not participants or flows. Prefer these two uses:
 
-**Payloads.** Show the data a step carries.
-- Name it `request` or `response`, or something more specific such as `event`, `webhook` or `file`.
-- Always set `type: yaml`.
-- Write a realistic sample payload as YAML, with believable values rather than placeholders.
-- Use `color: blue` for requests and `teal` for responses.
-- Add one where data crosses a boundary: UI to backend, service to service, or to and from external systems.
+1. **Payloads:** use `type: yaml`, a short name such as `request`, `response`, `event`, or `webhook`, and believable YAML content. Prefer `blue` for requests and `teal` for responses.
+2. **Statuses:** use a quoted name such as `"payment: authorised"`, omit `type`, and explain the state in `content`. Keep an entity's color consistent; use `red` for failures.
 
-```yaml
-badges:
-  - name: request
-    type: yaml
-    color: blue
-    content: |-
-      customerId: C-10482
-      documentType: proof_of_address
-      fileName: utility-bill-sept.pdf
-```
+Available colors are `blue`, `green`, `orange`, `red`, `purple`, `teal`, and `gray`. Put contextual explanation outside these two categories in `notes`. Aim for at most three badges per step.
 
-**Statuses.** Show where an entity reaches a state, for example a document the UI uploads, the backend saves and a scheduled job verifies.
-- Name it `"<entity>: <status>"`, lowercase and quoted, under about 24 characters.
-- Leave it as text type, so omit `type`.
-- The content explains what the status means, what moved it there, and what happens next.
-- Give each entity one colour and keep it across all flows. Use `red` for failure statuses.
-- Put it on the step that causes the change, usually the step arriving at the participant that now holds the state.
+## Authoring rules
 
-```yaml
-badges:
-  - name: "document: uploaded"
-    color: orange
-    content: |-
-      The file is stored and a document record exists.
-      It waits for the verification job.
-```
+- Every message's `from` and `to` must be IDs of participants in the **same flow**. Repeat participants when needed in different flows.
+- Flow and participant IDs should contain letters, digits, `.`, `-`, `_`; use kebab-case. Message IDs should be unique within their flow, e.g. `m1`, `m2`.
+- Put the overview flow first; do not add a `root` key. Keep flows focused.
+- Omit empty optional properties. Use two-space indentation and `|-` for multiline text.
+- Quote YAML strings where needed, particularly cross-file references containing `#` and values containing `: `.
+- Arrange participants left to right by interaction order; favor concise, meaningful message labels. Pair consequential requests with responses.
+- A linked drill-down flow should explain the step it expands, rather than simply repeat its parent flow.
+- IDs are implementation details: the normal Lifeline interface hides ID editing, but the raw YAML tab shows and permits editing IDs.
 
-Colours: `blue`, `green`, `orange`, `red`, `purple`, `teal`, `gray`. Badges are only allowed on messages. Put anything that is neither a payload nor a status in `notes`.
+## Working in Lifeline
 
-## Rules
-
-1. Every `from` and `to` is a participant id in the **same flow**. Participants aren't shared between flows, so list them in each flow that uses them.
-2. Every `link` is an existing flow id other than the flow it's in. Flows may link to each other in any direction, and one flow can be linked from several places.
-3. Ids use only letters, digits, `.`, `-` and `_`. Use kebab-case for flows and participants, and `m1`, `m2`… for messages.
-4. Don't add a `root` key.
-5. Omit optional keys rather than leaving them empty.
-6. Quote strings that contain `: `, `#`, `{`, `}`, `[`, `]`, `,`, `&`, `*`, `?`, `|`, `>`, `!`, `%` or `@`, or that start with a quote or dash.
-7. Use `|-` for multi-line notes and badge content, and indent with 2 spaces.
-
-## Design
-
-- **Participant order:** the initiator (often an `actor`) goes on the left, then each system in the order the request reaches it. External systems go on the right.
-- **Pairing:** a request that returns something meaningful gets a later `reply`. Skip responses that add nothing.
-- **Labels:** 2–6 words. They wrap at about 18 characters between neighbouring participants.
-  - API calls: `POST /payments`
-  - Actions: `Reserve funds`
-  - Responses: the outcome, such as `201 Created` or `approved`
-- **Linked flows:** a linked flow starts where the link left off. Its first participants are the sender and receiver of the linked step, and its first step mirrors that step.
-- **Badges per step:** at most about 3.
-
-The complete card-payment example is in `references/example.yaml`. It has three linked flows, payload badges and payment status badges.
-
-## Links
-
-A link opens the diagram in Lifeline's Preview, and the reader can switch to Design to edit it. Give the link as a plain URL on its own line, not as a Markdown link.
-
-| Form | When |
-|---|---|
-| `https://rudivuuren.github.io/lifeline/open/#z=<data>` | You can run code. `scripts/lifeline.py` prints it. |
-| `https://rudivuuren.github.io/lifeline/open/#yaml=<encoded YAML>` | You can't run code and the YAML is short (under about 3,000 characters). |
-| `https://rudivuuren.github.io/lifeline/open/?src=<encoded URL>` | The YAML is published at a public raw URL, such as a Gist. |
-
-You can add `&tab=design` or `&tab=yaml` (the default is `preview`), and `&flow=<flow id>`.
-
-For `#yaml=`, percent-encode the whole YAML the way JavaScript's `encodeURIComponent` does. Keep every indentation space. For example, new line → `%0A`, space → `%20`, `:` → `%3A`, `#` → `%23`, `&` → `%26`, `%` → `%25`, `"` → `%22`, `/` → `%2F`, `,` → `%2C`, `|` → `%7C`.
-
-```
-https://rudivuuren.github.io/lifeline/open/#yaml=title%3A%20Demo%0Aflows%3A%0A%20%20main%3A%0A%20%20%20%20name%3A%20Main%0A
-```
-
-If you can't run code and the YAML is long, skip the link. Give the YAML and tell the user to paste it into Lifeline's YAML tab or open the saved file.
-
-`#z=` is raw DEFLATE, base64url-encoded without padding. In Python: `zlib.compressobj(9, zlib.DEFLATED, -15)`, then `base64.urlsafe_b64encode(...).rstrip(b"=")`.
+- YAML, Design, and Preview show the currently selected file/flow; the files-and-flows sidebar remains available in the YAML view for switching files.
+- **File → Open file…** loads a YAML file. **File → Open folder…** loads a set of YAML files and enables cross-file references. New YAML files can also be created within the app.
+- The folder has a master sync toggle; each disk-backed file has its own matching sync toggle. Per-file sync preferences persist across refreshes where browser storage and file access permit. Browser-only files instead have a Delete action.
+- File-backed workspace handles are restored where supported, but the browser may request access permission again. File-backed diagrams are not also persisted as browser-local drafts; browser-only diagrams use browser storage.
+- Opening the app restores an existing browser draft when available, otherwise offers workspace choices. The example diagram loads only through **File → Load example**.
+- The detached **Map** button switches to a flow-reference map. Hovering highlights the selected flow at 100% opacity, direct connections at 80%, and unrelated items at 25%.
 
 ## Checklist
 
-- [ ] No `root` key, and the overview flow is listed first.
-- [ ] Every `from` and `to` exists in the same flow, and every `link` names another existing flow.
-- [ ] Every flow except the first is linked from somewhere.
-- [ ] Ids are unique within their flow and use only valid characters.
-- [ ] `kind` is omitted or `reply`.
-- [ ] Payload badges have `type: yaml` and a realistic sample. Status badges are quoted `"<entity>: <status>"` with one colour per entity.
-- [ ] Badges appear only on messages.
-- [ ] No flow is much bigger than 8 participants or 15 steps.
-- [ ] The link is on its own line.
+- [ ] YAML parses as a top-level mapping with a `title` and nonempty `flows` mapping.
+- [ ] Overview flow is first; no `root` key.
+- [ ] Each message's endpoints refer to participants in its flow.
+- [ ] Internal IDs are unique and stable; cross-file references are quoted.
+- [ ] All intended linked flows exist in the delivered YAML files, or are explicitly identified as missing (as in the comprehensive example).
+- [ ] Message styles and payload/status badges are appropriate.
+- [ ] All YAML files required to inspect the diagram in the Map and drill-down views are included.

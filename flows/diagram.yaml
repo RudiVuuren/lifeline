@@ -1,0 +1,192 @@
+title: Card payments
+flows:
+  card-payment:
+    name: Card payment
+    notes: |-
+      End-to-end card-not-present payment from checkout to settlement hold.
+      Steps 3 and 5 drill down into their own flows.
+    participants:
+      - id: customer
+        name: Customer
+        type: actor
+      - id: checkout
+        name: CHEESE
+      - id: payments
+        name: Payments API
+        notes: Idempotency key is required on POST /payments.
+      - id: fraud
+        name: Fraud service
+        link: fraud-scoring
+      - id: network
+        name: Card network
+        type: external
+      - id: ledger
+        name: Ledger
+        type: database
+    messages:
+      - id: m1
+        from: customer
+        to: checkout
+        label: Pay R 1 249.00
+      - id: m2
+        from: checkout
+        to: payments
+        label: POST /payments
+        badges:
+          - name: request
+            type: yaml
+            color: blue
+            content: |-
+              amount: 124900
+              currency: ZAR
+              cardToken: tok_4f9a
+              orderId: ORD-20931
+          - name: "payment: created"
+            color: orange
+            content: Payments API has recorded the payment intent. No funds are reserved yet.
+      - id: m3
+        from: payments
+        to: fraud
+        label: Score transaction
+        link: fraud-scoring
+      - id: m4
+        from: fraud
+        to: payments
+        label: score 12 · allow
+        kind: reply
+      - id: m5
+        from: payments
+        to: network
+        label: Authorise (0100)
+        link: authorisation
+        notes: |-
+          ISO 8583 authorisation request.
+          Timeout after 25 s, then reverse with 0400.
+      - id: m6
+        from: network
+        to: payments
+        label: 0110 approved
+        kind: reply
+        badges:
+          - name: "payment: authorised"
+            color: orange
+            content: The issuer approved the authorisation and reserved the funds on the card for up to 7 days.
+      - id: m7
+        from: payments
+        to: ledger
+        label: Post hold
+        badges:
+          - name: "payment: held"
+            color: orange
+            content: The ledger shows the reserved amount as a hold. Settlement converts it to a debit.
+      - id: m8
+        from: payments
+        to: checkout
+        label: 201 Created
+        kind: reply
+        badges:
+          - name: response
+            type: yaml
+            color: teal
+            content: |-
+              paymentId: pay_7Hc21
+              status: authorised
+              amount: 124900
+              currency: ZAR
+      - id: m9
+        from: checkout
+        to: customer
+        label: Show receipt
+        kind: reply
+  fraud-scoring:
+    name: SPACE
+    participants:
+      - id: fraud
+        name: Fraud service
+      - id: devices
+        name: Device cache
+        type: database
+      - id: rules
+        name: Rules engine
+      - id: model
+        name: Risk model
+    messages:
+      - id: m1
+        from: fraud
+        to: devices
+        label: Lookup fingerprint
+      - id: m2
+        from: devices
+        to: fraud
+        label: seen 14 times
+        kind: reply
+      - id: m3
+        from: fraud
+        to: rules
+        label: Evaluate velocity rules
+      - id: m4
+        from: rules
+        to: fraud
+        label: 0 hits
+        kind: reply
+      - id: m5
+        from: fraud
+        to: model
+        label: Predict(features)
+      - id: m6
+        from: model
+        to: fraud
+        label: p=0.012
+        kind: reply
+        notes: Threshold for review is 0.35; decline above 0.80.
+  authorisation:
+    name: Authorisation
+    participants:
+      - id: payments
+        name: Payments API
+      - id: hsm
+        name: HSM
+        type: external
+      - id: network
+        name: Card network
+        type: external
+      - id: issuer
+        name: Issuing bank
+    messages:
+      - id: m1
+        from: payments
+        to: hsm
+        label: Generate ARQC check
+      - id: m2
+        from: hsm
+        to: payments
+        label: ok
+        kind: reply
+      - id: m3
+        from: payments
+        to: network
+        label: 0100 auth request
+      - id: m4
+        from: network
+        to: issuer
+        label: Route by BIN
+      - id: m5
+        from: issuer
+        to: issuer
+        label: Check balance & limits
+      - id: m6
+        from: issuer
+        to: network
+        label: 0110 approved
+        kind: reply
+      - id: m7
+        from: network
+        to: payments
+        label: 0110 approved
+        kind: reply
+  flow-4:
+    name: Pig
+    participants:
+      - id: participant-1
+        name: Cheese
+    messages: []

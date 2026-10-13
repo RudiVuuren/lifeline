@@ -1,0 +1,81 @@
+title: Payment operations
+flows:
+  notifications:
+    name: Customer notifications
+    notes: Cross-file flow that links back to the checkout and authorisation overview.
+    participants:
+      - id: events
+        name: Events queue
+        type: queue
+      - id: worker
+        name: Notification worker
+      - id: provider
+        name: Email gateway
+        type: external
+      - id: store
+        name: Delivery log
+        type: database
+    messages:
+      - id: m1
+        from: events
+        to: worker
+        label: Deliver payment event
+        kind: async
+      - id: m2
+        from: worker
+        to: provider
+        label: Send receipt
+        badges:
+          - name: request
+            type: yaml
+            color: blue
+            content: |-
+              template: payment-receipt
+              recipient: shopper@example.com
+              paymentId: pay_4827
+      - id: m3
+        from: provider
+        to: worker
+        label: Accepted for delivery
+        kind: reply
+        badges:
+          - name: "email: queued"
+            color: teal
+            content: The provider accepted the receipt for asynchronous delivery.
+      - id: m4
+        from: worker
+        to: store
+        label: Persist delivery state
+      - id: m5
+        from: worker
+        to: worker
+        label: Inspect original payment
+        link: "payment-overview#checkout"
+        notes: Cross-file backlink; visible as a directed reference in Map.
+  exception-handling:
+    name: Exception handling
+    notes: |-
+      Demonstrates an intentionally unresolved reference for testing red links and missing-target Map nodes.
+      Remove or replace the link when the future workflow is implemented.
+    participants:
+      - id: support
+        name: Support agent
+        type: actor
+      - id: console
+        name: Operations console
+      - id: router
+        name: Exception router
+    messages:
+      - id: m1
+        from: support
+        to: console
+        label: Inspect failed payment
+      - id: m2
+        from: console
+        to: router
+        label: Escalate risk review
+        link: "future-integrations#risk-review"
+        badges:
+          - name: "review: pending"
+            color: red
+            content: Risk review is not yet implemented in this demonstration workspace.

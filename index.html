@@ -78,11 +78,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font: 500 11.5px var(--f-mono); cursor: default; white-space: nowrap;
 }
 .file-chip .fn { overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
-.file-chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
-.file-chip[data-state="saving"] i { background: var(--warn); }
-.file-chip[data-state="blocked"], .file-chip[data-state="error"] { cursor: pointer; border-color: var(--danger); }
-.file-chip[data-state="blocked"] i, .file-chip[data-state="error"] i { background: var(--danger); }
-.file-chip[data-state="blocked"] .st, .file-chip[data-state="error"] .st { color: var(--danger); }
+.file-sync {
+  width: 17px; height: 20px; flex: none; display: grid; place-items: center; padding: 0; border: 0;
+  background: transparent; color: var(--ok); cursor: pointer;
+}
+.file-sync svg { width: 15px; height: 15px; }
+.file-sync[data-enabled="false"] { color: var(--danger); }
+.file-sync:disabled { cursor: default; }
+.file-sync:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
+.file-chip[data-state="blocked"], .file-chip[data-state="error"] { border-color: var(--danger); }
+.file-chip[data-state="blocked"] .file-sync, .file-chip[data-state="error"] .file-sync { color: var(--danger); }
+.file-chip[data-state="blocked"] .st, .file-chip[data-state="error"] .st { color: var(--danger); cursor: pointer; }
 .doc-title {
   min-width: 0; width: 100%; max-width: 360px; border: 1px solid transparent; background: transparent;
   padding: 5px 8px; border-radius: 6px; font-weight: 500; color: var(--muted);
@@ -122,8 +128,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ---------- body grid ---------- */
 .body { display: grid; grid-template-columns: 236px minmax(0, 1fr) 344px; min-height: 0; }
 .body.no-insp { grid-template-columns: 236px minmax(0, 1fr); }
-.body.mode-yaml { grid-template-columns: minmax(0, 1fr); }
-.body.mode-yaml .rail, .body.mode-yaml .insp { display: none; }
+.body.mode-yaml { grid-template-columns: 236px minmax(0, 1fr); }
+.body.mode-yaml .insp { display: none; }
 .body.mode-yaml .stage { grid-template-rows: minmax(0, 1fr); }
 .body.no-insp .insp { display: none; }
 
@@ -132,6 +138,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .rail-h { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 8px; }
 .eyebrow { font: 600 10.5px var(--f-mono); letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
 .tree { display: grid; gap: 1px; }
+.tree-file { display: grid; gap: 1px; margin-bottom: 10px; }
+.tree-file:last-child { margin-bottom: 0; }
+.tree-file-name {
+  padding: 5px 8px 3px 26px; color: var(--faint); font: 600 10.5px var(--f-mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .tree-item {
   display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px;
   border: 0; background: transparent; text-align: left; padding: 6px 8px; border-radius: 6px; cursor: pointer;
@@ -144,6 +156,29 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tree-item.active { background: var(--accent-soft); font-weight: 600; }
 .tree-item.active .gl { color: var(--accent); }
 .rail-sec { margin-top: 16px; padding: 0 6px 6px; }
+
+
+/* File groups: prominent filenames, subtle flow indentation, contextual creation. */
+.rail-h { gap: 8px; padding-bottom: 12px; }
+.rail-new-file { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:7px; padding:5px 8px; background:var(--surface); color:var(--accent); font-size:11px; font-weight:700; cursor:pointer; }
+.rail-new-file:hover { border-color:var(--accent); background:var(--accent-soft); }
+.rail-new-file svg, .tree-file-add svg, .tree-file-icon svg { width:15px; height:15px; }
+.tree-file { border:1px solid var(--rule); border-radius:9px; background:var(--surface); overflow:hidden; margin:0 0 10px; gap:0; }
+.tree-file.current { border-color:color-mix(in srgb, var(--accent) 48%, var(--rule)); }
+.tree-file-heading { display:flex; align-items:center; gap:7px; min-width:0; padding:8px 7px 8px 10px; background:var(--panel); border-bottom:1px solid var(--rule); }
+.tree-file.current .tree-file-heading { background:var(--accent-soft); }
+.tree-file-icon { display:flex; flex:none; color:var(--accent); }
+.tree-file-name { flex:1; min-width:0; padding:0; color:var(--ink); font:600 11.5px var(--f-ui); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tree-file-add { width:25px; height:25px; flex:none; display:grid; place-items:center; padding:0; border:1px solid transparent; border-radius:6px; color:var(--muted); background:transparent; cursor:pointer; }
+.tree-file-add:hover { color:var(--accent); border-color:var(--line); background:var(--surface); }
+.tree-file-remove:hover { color:var(--danger); border-color:var(--danger); }
+.tree-file-sync { width:25px; height:25px; flex:none; border:0; padding:0; display:grid; place-items:center; border-radius:6px; background:transparent; color:var(--ok); cursor:pointer; }
+.tree-file-sync svg { width:15px; height:15px; }
+.tree-file-sync[data-enabled="false"] { color:var(--danger); }
+.tree-file-sync:hover { background:var(--bg); }
+.tree-file-sync:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.tree-file-flows { padding:5px; display:grid; gap:2px; }
+.tree-file-flows .tree-item { width:100%; padding-left:9px; font-size:12.5px; }
 
 /* stage */
 .stage { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; }
@@ -179,6 +214,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .canvas-wrap {
   position: relative; overflow: auto; min-height: 0; background-color: var(--canvas);
   background-image: radial-gradient(var(--dot) 1px, transparent 1.2px); background-size: 18px 18px;
+  cursor: grab;
+}
+.canvas-wrap.panning, .canvas-wrap.panning * { cursor: grabbing !important; scroll-behavior: auto; }
+.canvas-wrap.drop-target::after {
+  content: 'Drop YAML files or a folder to open'; position: sticky; left: 50%; top: 50%; z-index: 12;
+  display: block; width: max-content; transform: translate(-50%, -50%); padding: 12px 16px;
+  border: 2px dashed var(--accent); border-radius: 10px; background: var(--surface); color: var(--accent);
+  font-weight: 700; box-shadow: var(--shadow); pointer-events: none;
 }
 .canvas-inner { padding: 24px 16px 120px; width: max-content; min-width: 100%; position: relative; }
 .inline-ed {
@@ -232,6 +275,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .head .hn.lnk, .msg .lb.lnk { fill: var(--accent); text-decoration: underline; }
 .mode-preview .lnk { cursor: pointer; }
 .mode-preview .lnk:hover { fill: var(--ink); }
+.head .hn.lnk-missing, .msg .lb.lnk-missing, .mode-preview .lnk-missing:hover { fill: var(--danger); text-decoration: underline; }
+.mode-preview .lnk-missing { cursor: pointer; }
 .msg { cursor: pointer; }
 .msg .hit { fill: transparent; }
 .msg .ln { stroke: var(--ink); stroke-width: 1.4; fill: none; }
@@ -304,6 +349,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .fld input:focus, .fld select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .fld input.mono { font: 12.5px var(--f-mono); }
+/* Broken drill-down references are visually distinct. */
+#f-link.missing-link { color: var(--danger); border-color: var(--danger); }
+#f-link option.missing-link { color: var(--danger); }
 .seg { display: grid; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .seg button {
   border: 0; background: transparent; border-radius: 6px; padding: 6px 2px 5px; cursor: pointer; display: grid;
@@ -311,9 +359,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .seg button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seg button svg { width: 26px; height: 14px; }
+.seg .dir-arrow { font: 700 17px/14px var(--f-mono); }
 .seg button:hover { color: var(--ink); background: var(--bg); }
 .seg button[aria-checked="true"] { background: var(--accent-soft); color: var(--accent); }
 .fld.inline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.step-controls { display: flex; align-items: stretch; gap: 7px; }
+.style-toggle {
+  width: 38px; min-width: 38px; border: 1px solid var(--line); border-radius: 8px; padding: 0;
+  background: var(--surface); color: var(--muted); display: grid; place-items: center; cursor: pointer;
+}
+.style-toggle:hover { border-color: var(--accent); color: var(--ink); }
+.style-toggle[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.style-toggle svg { width: 23px; height: 14px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .btnrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
 .meta { font: 11.5px var(--f-mono); color: var(--muted); display: grid; gap: 3px; }
@@ -389,7 +446,40 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: var(--ink); color: var(--surface); border-radius: 9px; padding: 9px 12px 9px 14px; display: flex; gap: 12px;
   align-items: center; box-shadow: var(--shadow); font-size: 13px; max-width: calc(100% - 32px);
 }
-.toast button { border: 0; background: transparent; color: var(--accent-soft); font-weight: 700; cursor: pointer; padding: 2px 4px; }
+.toast > span { min-width: 0; }
+.toast button { flex: none; margin-left: auto; border: 0; background: transparent; color: var(--accent-soft); font-weight: 700; cursor: pointer; padding: 2px 4px; }
+
+
+/* Workspace-wide flow reference map */
+.map-switch { flex:none; margin-left:2px; padding:6px 16px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-weight:700; cursor:pointer; }
+.map-switch:hover { border-color:var(--accent); color:var(--accent); }
+.map-switch[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.top { grid-template-columns: auto minmax(0, 1fr) auto auto auto; }
+.body.mode-map { grid-template-columns:minmax(0,1fr); }
+.body.mode-map .rail,.body.mode-map .insp { display:none !important; }
+.body.mode-map .stage { grid-template-rows:minmax(0,1fr); }
+.map-pane { display:grid; grid-template-rows:auto minmax(0,1fr); min-height:0; background:var(--canvas); }
+.map-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:9px 16px; background:var(--surface); border-bottom:1px solid var(--rule); color:var(--muted); font:500 12px var(--f-mono); }
+.map-scroll { overflow:auto; min-height:0; background-image:radial-gradient(var(--dot) 1px, transparent 1.2px); background-size:18px 18px; }
+#mapSvg { display:block; min-width:100%; }
+.map-node { cursor:pointer; }
+.map-node .map-box { fill:var(--surface); stroke:var(--line); stroke-width:1.4; }
+.map-node:hover .map-box { stroke:var(--accent); stroke-width:2.3; }
+.map-node.map-active .map-box { stroke:var(--accent); stroke-width:2.4; fill:var(--accent-soft); }
+.map-node text { fill:var(--ink); font:600 13px var(--f-ui); pointer-events:none; }
+.map-node .map-sub { fill:var(--muted); font:11px var(--f-mono); }
+.map-edge { fill:none; stroke:var(--link); stroke-width:1.65; opacity:.68; pointer-events:stroke; }
+.map-edge:hover { stroke-width:3; opacity:1; }
+.map-edge.missing { stroke:var(--danger); stroke-dasharray:6 4; }
+.map-node, .map-edge { transition:opacity .15s ease; }
+.map-node.map-dim, .map-edge.map-dim { opacity:.25; }
+.map-node.map-related, .map-edge.map-related { opacity:.8; }
+.map-node.map-focus { opacity:1; }
+.map-edge.map-related { stroke-opacity:1; }
+.map-edge.map-dim { stroke-opacity:1; }
+.map-group-label { fill:var(--muted); font:700 12px var(--f-mono); }
+.map-link-label { fill:var(--muted); font:10px var(--f-mono); }
+@media (max-width:860px) { .top { grid-template-columns:auto minmax(0,1fr) auto auto; } .map-switch { grid-column:4; grid-row:1; } .actions { grid-column:3; grid-row:1; } }
 
 /* ---------- narrow screens ---------- */
 @media (max-width: 860px) {
@@ -400,6 +490,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .brand .wm { display: none; }
   .body, .body.no-insp { grid-template-columns: minmax(0, 1fr); }
   .rail { display: none; }
+  .body.mode-yaml { grid-template-columns: minmax(0, 1fr); }
+  .body.mode-yaml .rail { display: block; position: fixed; z-index: 35; top: 106px; bottom: 0; left: 0; width: min(280px, 82vw); box-shadow: var(--shadow); }
+  .body.mode-yaml:not(.yaml-files-open) .rail { display: none; }
   .flow-select { display: block; flex: 1 1 160px; height: 30px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 0 6px; }
   .crumbs { display: none; }
   .hide-narrow { display: none !important; }
@@ -431,38 +524,41 @@ button, input, select, textarea { font: inherit; color: inherit; }
     </div>
     <div class="title-wrap">
       <input class="doc-title" id="docTitle" aria-label="Diagram title" spellcheck="false">
-      <button type="button" class="file-chip" id="fileChip" hidden></button>
+      <div class="file-chip" id="fileChip" hidden></div>
     </div>
     <nav class="tabs" role="tablist" aria-label="View">
       <button class="tab" role="tab" data-tab="yaml" id="tab-yaml">YAML</button>
       <button class="tab" role="tab" data-tab="design" id="tab-design">Design</button>
       <button class="tab" role="tab" data-tab="preview" id="tab-preview">Preview</button>
     </nav>
+    <button class="map-switch" id="btnMap" type="button" aria-pressed="false" title="Map flow references">Map</button>
     <div class="actions">
+      <button class="ibtn" id="btnYamlFiles" title="Show files and flows" aria-label="Show files and flows" aria-expanded="false" hidden>Files</button>
       <button class="ibtn" id="btnUndo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 3 2.5 6l3 3"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7"/></svg></button>
       <button class="ibtn" id="btnRedo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 3l3 3-3 3"/><path d="M13.5 6h-7a4 4 0 0 0 0 8H9"/></svg></button>
       <button class="ibtn" id="btnFile" aria-haspopup="true" aria-expanded="false">File <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 6 4 4 4-4"/></svg></button>
       <div class="menu" id="fileMenu" hidden>
         <button data-cmd="open">Open file… <small>Ctrl+O</small></button>
+        <button data-cmd="openfolder">Open folder…</button>
         <button data-cmd="save" class="fs-only">Save <small>Ctrl+S</small></button>
         <button data-cmd="saveas" class="fs-only">Save as… <small>.yaml</small></button>
         <button data-cmd="download" class="dl-only">Download <small>.yaml</small></button>
         <button data-cmd="unlink" id="cmdUnlink" hidden>Stop saving to file</button>
         <hr>
         <button data-cmd="copy">Copy YAML <small>clipboard</small></button>
-        <button data-cmd="share">Copy share link <small>URL</small></button>
+
         <hr>
         <button data-cmd="new">New diagram</button>
         <button data-cmd="example">Load example</button>
-        <button data-cmd="restore" id="cmdRestore" hidden>Restore previous diagram</button>
+
       </div>
     </div>
   </header>
 
   <div class="body mode-design" id="body">
     <aside class="rail" aria-label="Flows">
-      <div class="rail-h"><span class="eyebrow">Flows</span>
-        <button class="ibtn" id="btnAddFlow" title="Add flow" aria-label="Add flow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
+      <div class="rail-h"><span class="eyebrow">Files &amp; flows</span>
+        <button class="rail-new-file" id="btnNewFile" type="button" title="Create YAML file" aria-label="Create new file"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg><span>File</span></button>
       </div>
       <div class="tree" id="tree"></div>
     </aside>
@@ -475,6 +571,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
       </div>
       <div class="canvas-wrap" id="canvasWrap">
         <div class="canvas-inner"><svg id="diagram" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence diagram"></svg></div>
+      </div>
+      <div class="map-pane" id="mapPane" hidden>
+        <div class="map-toolbar"><span id="mapSummary">Flow reference map</span><div><button class="pbtn" id="mapReset" type="button">Fit map</button></div></div>
+        <div class="map-scroll" id="mapScroll"><svg id="mapSvg" xmlns="http://www.w3.org/2000/svg" aria-label="Flow dependency map" role="img"></svg></div>
       </div>
       <div class="yaml-pane" id="yamlPane" hidden>
         <div class="yaml-host" id="yamlHost"><div class="loading-ed">Loading editor…</div></div>
@@ -492,6 +592,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   <div class="scrim" id="modal" hidden></div>
   <div class="toast" id="toast" hidden></div>
   <input type="file" id="fileInput" accept=".yaml,.yml,text/yaml,text/plain" hidden>
+  <input type="file" id="folderInput" accept=".yaml,.yml,text/yaml,text/plain" webkitdirectory multiple hidden>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
@@ -500,7 +601,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 (() => {
 'use strict';
 const MONACO = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min';
-const STORE = 'lifeline.v1.yaml', STORE_TAB = 'lifeline.v1.tab', STORE_PREV = 'lifeline.v1.previous';
+const STORE_FILES = 'lifeline.v1.workspace', STORE = 'lifeline.v1.yaml', STORE_TAB = 'lifeline.v1.tab', STORE_PREV = 'lifeline.v1.previous';
 const APP_URL = 'https://rudivuuren.github.io/lifeline/';
 const TYPES = ['participant', 'actor', 'database', 'queue', 'external'];
 const KINDS = ['sync', 'async', 'reply'];
@@ -535,9 +636,9 @@ const SHAPE_OPTS = [
   ['queue', 'Queue', SEG_SVG('<rect x="3" y="2.5" width="20" height="9" rx="4.5"/><path d="M18 3v8"/>')],
   ['external', 'External', SEG_SVG('<rect x="5" y="2" width="16" height="10" rx="1" stroke-dasharray="2.5 2"/>')],
 ];
-const KIND_OPTS = [
-  ['sync', 'Request', SEG_SVG('<path d="M2 7h17"/><path d="M24 7l-6-3.2v6.4z" fill="currentColor"/>')],
-  ['reply', 'Response', SEG_SVG('<path d="M24 7H8" stroke-dasharray="3 2.5"/><path d="M2 7l6-3.2v6.4z" fill="currentColor"/>')],
+const DIRECTION_OPTS = [
+  ['left', 'Left', '<span class="dir-arrow" aria-hidden="true">←</span>'],
+  ['right', 'Right', '<span class="dir-arrow" aria-hidden="true">→</span>'],
 ];
 function seg(id, opts, cur, label, iconOnly) {
   const cols = iconOnly ? `repeat(${opts.length},48px);width:fit-content` : `repeat(${opts.length},minmax(0,1fr))`;
@@ -761,6 +862,7 @@ flows:
 
 // ---------- state ----------
 let doc, nav = [], sel = null, tab = 'design', zoom = 1;
+let workspace = [], activeFileKey = '', directoryHandle = null, fileSyncEnabled = false;
 let undoStack = [], redoStack = [], lastKey = null, lastT = 0;
 let yamlEd = null, notesEd = null, monacoReady = false;
 let yamlDirty = true, yamlInvalid = false, lastWarnings = [];
@@ -817,7 +919,7 @@ function normalize(raw) {
   const ids = Object.keys(out.flows);
   if (!ids.length) throw new Error('Add at least one flow under "flows".');
   for (const [fid, f] of Object.entries(out.flows)) {
-    for (const n of [...f.participants, ...f.messages]) if (n.link && !out.flows[n.link]) warnings.push(`${fid}/${n.id}: link "${n.link}" has no matching flow`);
+    for (const n of [...f.participants, ...f.messages]) if (n.link && !n.link.includes('#') && !out.flows[n.link]) warnings.push(`${fid}/${n.id}: link "${n.link}" has no matching flow`);
   }
   return { doc: out, warnings };
 }
@@ -836,9 +938,59 @@ function toYaml(d) {
   return jsyaml.dump(o, { lineWidth: -1, noRefs: true, quotingType: '"' });
 }
 
-const flowId = () => nav[nav.length - 1];
+const stripYamlExt = (name) => String(name || '').replace(/\.ya?ml$/i, '');
+const entryKey = (path) => String(path || 'diagram.yaml').replace(/\\/g, '/').toLowerCase();
+const activeEntry = () => workspace.find((x) => x.key === activeFileKey) || workspace[0] || null;
+const entryByKey = (key) => workspace.find((x) => x.key === key) || null;
+const target = (fileKey, fid) => ({ fileKey, fid });
+const sameTarget = (a, b) => !!(a && b && a.fileKey === b.fileKey && a.fid === b.fid);
+const encodeTarget = (fileKey, fid) => `${encodeURIComponent(fileKey)}#${encodeURIComponent(fid)}`;
+function decodeTarget(value) { const i = value.indexOf('#'); return target(decodeURIComponent(value.slice(0, i)), decodeURIComponent(value.slice(i + 1))); }
+const flowId = () => nav[nav.length - 1]?.fid || firstFlow();
 const flow = () => doc.flows[flowId()];
-const linkOk = (id) => !!(id && doc.flows[id]);
+function entryLabel(e) { return e.path || e.name || 'diagram.yaml'; }
+function diagramRef(e) { return stripYamlExt(e.path || e.name); }
+function findFlow(e, ref) {
+  if (!e || !ref) return '';
+  if (e.doc.flows[ref]) return ref;
+  const low = String(ref).toLowerCase();
+  return Object.keys(e.doc.flows).find((id) => id.toLowerCase() === low || e.doc.flows[id].name.toLowerCase() === low) || '';
+}
+function findEntry(ref) {
+  const needle = String(ref || '').replace(/\\/g, '/').replace(/^file:\/\/+/, '').replace(/^\/+/, '').toLowerCase();
+  const noExt = stripYamlExt(needle);
+  return workspace.find((e) => {
+    const path = entryLabel(e).replace(/\\/g, '/').toLowerCase();
+    const name = e.name.toLowerCase();
+    return path === needle || name === needle || stripYamlExt(path) === noExt || stripYamlExt(name) === noExt || path.endsWith(`/${needle}`) || stripYamlExt(path).endsWith(`/${noExt}`);
+  }) || null;
+}
+function resolveLink(ref, source = activeEntry()) {
+  if (!ref || !source) return null;
+  const raw = String(ref), hash = raw.indexOf('#');
+  if (hash < 0) {
+    const fid = findFlow(source, raw);
+    return fid ? { entry: source, fid } : null;
+  }
+  const e = findEntry(raw.slice(0, hash));
+  const fid = findFlow(e, raw.slice(hash + 1));
+  return e && fid ? { entry: e, fid } : null;
+}
+const linkOk = (ref) => !!resolveLink(ref);
+function linkText(ref) {
+  const r = resolveLink(ref);
+  return r ? `${r.entry.doc.flows[r.fid].name} in ${entryLabel(r.entry)}` : String(ref || '');
+}
+function linkFor(e, fid, source = activeEntry()) { return e.key === source?.key ? fid : `${diagramRef(e)}#${fid}`; }
+function activateEntry(key, syncEditor = true) {
+  const e = entryByKey(key);
+  if (!e) return false;
+  activeFileKey = e.key; doc = e.doc; lastWarnings = e.warnings || [];
+  yamlDirty = true; yamlInvalid = false;
+  if (syncEditor && tab === 'yaml') syncYaml();
+  setFileState(e.state || 'saved');
+  return true;
+}
 function getNode(t, f = flow()) {
   if (!t || !f) return null;
   if (t.kind === 'flow') return f;
@@ -847,6 +999,7 @@ function getNode(t, f = flow()) {
   return null;
 }
 const pName = (f, id) => (f.participants.find((p) => p.id === id) || { name: id }).name;
+const messageDirection = (m, f = flow()) => f.participants.findIndex((p) => p.id === m.to) < f.participants.findIndex((p) => p.id === m.from) ? 'left' : 'right';
 function nodeTitle(t, n) {
   if (t.kind === 'flow') return n.name;
   if (t.kind === 'p') return n.name;
@@ -855,34 +1008,129 @@ function nodeTitle(t, n) {
 const firstFlow = () => Object.keys(doc.flows)[0];
 function linkedFrom(fid) {
   const refs = [];
-  for (const [id, f] of Object.entries(doc.flows)) {
-    f.participants.forEach((p) => { if (p.link === fid) refs.push({ flow: id, kind: 'p', id: p.id, label: p.name }); });
-    f.messages.forEach((m, i) => { if (m.link === fid) refs.push({ flow: id, kind: 'm', id: m.id, label: `${i + 1}. ${m.label || '(no label)'}` }); });
+  const wanted = target(activeFileKey, fid);
+  for (const e of workspace) for (const [id, f] of Object.entries(e.doc.flows)) {
+    f.participants.forEach((p) => { const r = resolveLink(p.link, e); if (r && sameTarget(target(r.entry.key, r.fid), wanted)) refs.push({ fileKey: e.key, flow: id, kind: 'p', id: p.id, label: p.name }); });
+    f.messages.forEach((m, i) => { const r = resolveLink(m.link, e); if (r && sameTarget(target(r.entry.key, r.fid), wanted)) refs.push({ fileKey: e.key, flow: id, kind: 'm', id: m.id, label: `${i + 1}. ${m.label || '(no label)'}` }); });
   }
   return refs;
 }
 function fixNav() {
-  nav = nav.filter((id) => doc.flows[id]);
-  if (!nav.length) nav = [firstFlow()];
+  nav = nav.filter((x) => entryByKey(x.fileKey)?.doc.flows[x.fid]);
+  if (!nav.length) nav = [target(activeFileKey, firstFlow())];
+  activateEntry(nav[nav.length - 1].fileKey, false);
   if (sel && sel.kind !== 'flow' && !getNode(sel)) sel = null;
 }
 
 // ---------- persistence & history ----------
 let saveT = null;
+// FileSystemHandle objects are structured-cloneable in IndexedDB (not localStorage).
+const HANDLES_DB = 'lifeline.file-handles.v1';
+const perFilePaused = new Set();
+function handleDatabase() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error('IndexedDB unavailable'));
+    const req = indexedDB.open(HANDLES_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('workspace');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function storeHandles() {
+  try {
+    const db = await handleDatabase();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('workspace', 'readwrite');
+      tx.objectStore('workspace').put({ directory: directoryHandle, syncEnabled: fileSyncEnabled, paused: [...perFilePaused], files: workspace.filter(e => e.handle).map(e => ({ key: e.key, path: e.path, inDirectory: e.inDirectory, text: toYaml(e.doc), handle: e.handle })) }, 'handles');
+      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch (err) { console.warn('Could not remember file handles:', err); }
+}
+let hasBrowserDrafts = false, restoredFileWorkspace = false;
+async function restoreHandles() {
+  try {
+    const db = await handleDatabase();
+    const stored = await new Promise((resolve, reject) => {
+      const tx = db.transaction('workspace', 'readonly');
+      const req = tx.objectStore('workspace').get('handles');
+      req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error);
+    });
+    db.close();
+    if (!stored) return;
+    perFilePaused.clear();
+    (stored.paused || []).forEach(path => perFilePaused.add(path));
+    directoryHandle = stored.directory || null;
+    const entries = [];
+    if (directoryHandle) {
+      try {
+        if (await directoryHandle.queryPermission({ mode: 'read' }) === 'granted') {
+          for (const item of await collectDirectory(directoryHandle)) {
+            try { const e = await entryFromHandle(item.handle, item.path); e.inDirectory = true; entries.push(e); } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
+    if (!entries.length) for (const item of stored.files || []) {
+      try {
+        const permitted = await item.handle.queryPermission({ mode: 'read' }) === 'granted';
+        let e;
+        if (permitted) e = await entryFromHandle(item.handle, item.path || item.handle.name);
+        else if (item.text) {
+          const parsed = normalize(jsyaml.load(item.text));
+          e = makeFileEntry({ name: item.handle.name, path: item.path || item.handle.name, handle: item.handle, text: item.text, doc: parsed.doc, warnings: parsed.warnings });
+          e.state = 'blocked';
+        } else continue;
+        e.inDirectory = !!item.inDirectory;
+        entries.push(e);
+      } catch (_) {}
+    }
+    if (entries.length && !hasBrowserDrafts) {
+      installWorkspace(entries, entries[0].key, directoryHandle, true);
+      fileSyncEnabled = stored.syncEnabled !== false;
+      restoredFileWorkspace = true;
+    } else if (entries.length) {
+      // Keep browser-only drafts active, but show the restored linked files too.
+      for (const e of entries) {
+        const existing = entryByKey(e.key);
+        if (existing && !existing.handle) {
+          const i = workspace.indexOf(existing); workspace[i] = e;
+          if (activeFileKey === e.key) { doc = e.doc; nav = [target(e.key, Object.keys(e.doc.flows)[0])]; }
+        } else if (!existing) workspace.push(e);
+      }
+      persistBrowserWorkspace();
+    }
+    fileSyncEnabled = stored.syncEnabled !== false && (!!directoryHandle || workspace.some(e => e.handle));
+    for (const e of workspace) if (e.handle) {
+      try { if (await e.handle.queryPermission({ mode: 'readwrite' }) !== 'granted') e.state = 'blocked'; }
+      catch (_) { e.state = 'blocked'; }
+    }
+  } catch (err) { console.warn('Could not restore file handles:', err); }
+}
+function persistBrowserWorkspace() {
+  const files = workspace.filter(e => !e.handle && !e.file).map(e => ({ name: e.name, path: e.path, text: toYaml(e.doc) }));
+  try {
+    if (files.length) localStorage.setItem(STORE_FILES, JSON.stringify({ files, active: files.some(f => entryKey(f.path) === activeFileKey) ? activeFileKey : entryKey(files[0].path) }));
+    else localStorage.removeItem(STORE_FILES);
+    localStorage.removeItem(STORE);
+  } catch (_) {}
+  void storeHandles();
+}
 function save() {
   clearTimeout(saveT);
-  saveT = setTimeout(() => { try { localStorage.setItem(STORE, toYaml(doc)); } catch (e) { /* storage unavailable */ } }, 250);
-  scheduleFileSave();
+  saveT = setTimeout(persistBrowserWorkspace, 250);
+  const e = activeEntry(); if (e) { e.doc = doc; scheduleFileSave(e); }
 }
 function commit(fn, opt = {}) {
   const now = Date.now();
   if (!(opt.key && opt.key === lastKey && now - lastT < 1500)) {
-    undoStack.push(JSON.stringify({ doc, nav }));
+    undoStack.push(JSON.stringify({ doc, nav, fileKey: activeFileKey }));
     if (undoStack.length > 150) undoStack.shift();
     redoStack = [];
   }
   lastKey = opt.key || null; lastT = now;
   fn();
+  const e = activeEntry(); if (e) e.doc = doc;
   fixNav();
   save();
   if (!opt.fromYaml) markYamlDirty();
@@ -890,8 +1138,10 @@ function commit(fn, opt = {}) {
 }
 function restore(from, to) {
   if (!from.length) return;
-  to.push(JSON.stringify({ doc, nav }));
+  to.push(JSON.stringify({ doc, nav, fileKey: activeFileKey }));
   const s = JSON.parse(from.pop());
+  const e = entryByKey(s.fileKey) || activeEntry();
+  if (e) { e.doc = s.doc; activeFileKey = e.key; }
   doc = s.doc; nav = s.nav; lastKey = null;
   fixNav(); save(); markYamlDirty(); render(true);
 }
@@ -915,7 +1165,8 @@ function fitTitle() { const t = $('#docTitle'); t.style.width = `${Math.min(360,
 function render(withInspector) {
   $('#docTitle').value !== doc.title && document.activeElement !== $('#docTitle') && ($('#docTitle').value = doc.title);
   fitTitle();
-  renderTabs(); renderRail(); renderCrumbs(); renderTools(); renderDiagram();
+  renderTabs(); renderRail(); renderCrumbs(); renderTools();
+  if (tab === 'map') renderMap(); else renderDiagram();
   if (withInspector) renderInspector();
   layoutClasses();
   $('#btnUndo').disabled = !undoStack.length;
@@ -925,27 +1176,32 @@ function isNarrow() { return window.matchMedia('(max-width: 860px)').matches; }
 function layoutClasses() {
   const b = $('#body');
   b.classList.toggle('mode-yaml', tab === 'yaml');
+  b.classList.toggle('mode-map', tab === 'map');
   b.classList.toggle('mode-design', tab === 'design');
   b.classList.toggle('mode-preview', tab === 'preview');
-  const showInsp = tab !== 'yaml' && ((tab === 'design' && !isNarrow()) || !!sel);
+  const showInsp = tab !== 'yaml' && tab !== 'map' && ((tab === 'design' && !isNarrow()) || !!sel);
   b.classList.toggle('no-insp', !showInsp);
-  $('#canvasWrap').hidden = tab === 'yaml';
-  $('#btnAddFlow').hidden = tab !== 'design';
-  $('#crumbbar').hidden = tab === 'yaml';
+  $('#canvasWrap').hidden = tab === 'yaml' || tab === 'map';
+  $('#mapPane').hidden = tab !== 'map';
+
+  $('#crumbbar').hidden = tab === 'yaml' || tab === 'map';
+  $('#btnYamlFiles').hidden = tab !== 'yaml' || !isNarrow();
   $('#yamlPane').hidden = tab !== 'yaml';
+  $('#btnMap').setAttribute('aria-pressed', String(tab === 'map'));
 }
 function renderTabs() {
   document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
 }
 function renderRail() {
   const cur = flowId();
-  $('#tree').innerHTML = Object.entries(doc.flows).map(([id, f]) => `<button class="tree-item ${id === cur ? 'active' : ''}" data-flow="${esc(id)}"><span class="gl">${id === cur ? '◆' : '◇'}</span><span class="nm">${esc(f.name)}</span></button>`).join('');
-  $('#flowSelect').innerHTML = Object.entries(doc.flows).map(([id, f]) => `<option value="${esc(id)}" ${id === cur ? 'selected' : ''}>${esc(f.name)}</option>`).join('');
+  $('#tree').innerHTML = workspace.map((e) => `<section class="tree-file ${e.key === activeFileKey ? 'current' : ''}"><div class="tree-file-heading"><span class="tree-file-icon" aria-hidden="true">${ICON.file}</span><span class="tree-file-name" title="${esc(entryLabel(e))}">${esc(entryLabel(e))}</span><button class="tree-file-add" type="button" data-add-flow="${esc(e.key)}" title="Add flow to ${esc(entryLabel(e))}" aria-label="Add flow to ${esc(entryLabel(e))}">${ICON.plus}</button><button class="${e.handle || e.inDirectory ? 'tree-file-sync' : 'tree-file-add tree-file-remove'}" type="button" ${e.handle || e.inDirectory ? `data-sync-file="${esc(e.key)}" data-enabled="${!perFilePaused.has(entryKey(e.path))}" aria-pressed="${!perFilePaused.has(entryKey(e.path))}" title="${perFilePaused.has(entryKey(e.path)) ? 'Resume syncing' : 'Pause syncing'} ${esc(entryLabel(e))}" aria-label="${perFilePaused.has(entryKey(e.path)) ? 'Resume syncing' : 'Pause syncing'} ${esc(entryLabel(e))}"` : `data-remove-file="${esc(e.key)}" title="Delete browser file" aria-label="Delete ${esc(entryLabel(e))}"`}>${e.handle || e.inDirectory ? ICON.link : ICON.trash}</button></div><div class="tree-file-flows">${Object.entries(e.doc.flows).map(([id, f]) => `<button class="tree-item ${e.key === activeFileKey && id === cur ? 'active' : ''}" data-file="${esc(e.key)}" data-flow="${esc(id)}"><span class="gl">${e.key === activeFileKey && id === cur ? '◆' : '◇'}</span><span class="nm">${esc(f.name)}</span></button>`).join('')}</div></section>`).join('');
+  $('#flowSelect').innerHTML = workspace.map((e) => `<optgroup label="${esc(entryLabel(e))}">${Object.entries(e.doc.flows).map(([id, f]) => `<option value="${esc(encodeTarget(e.key, id))}" ${e.key === activeFileKey && id === cur ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</optgroup>`).join('');
 }
 function renderCrumbs() {
-  $('#crumbs').innerHTML = nav.map((id, i) => {
+  $('#crumbs').innerHTML = nav.map((x, i) => {
     const last = i === nav.length - 1;
-    return `${i ? '<span class="crumb-sep">↘</span>' : ''}<button class="crumb ${last ? 'cur' : ''}" data-crumb="${i}" ${last ? 'aria-current="page"' : ''}>${esc(doc.flows[id].name)}</button>`;
+    const e = entryByKey(x.fileKey), f = e?.doc.flows[x.fid];
+    return `${i ? '<span class="crumb-sep">↘</span>' : ''}<button class="crumb ${last ? 'cur' : ''}" data-crumb="${i}" title="${esc(entryLabel(e))}" ${last ? 'aria-current="page"' : ''}>${esc(f?.name || x.fid)}</button>`;
   }).join('');
 }
 function itemActions(t) {
@@ -959,6 +1215,7 @@ function actBtns(t, attr) {
   return itemActions(t).map(([a, label, dis]) => `${a === 'del' || a === 'delflow' ? '<span class="sep"></span>' : ''}<button type="button" ${attr}="${a}" title="${label}" aria-label="${label}" class="${a === 'del' || a === 'delflow' ? 'danger' : ''}" ${dis ? 'disabled' : ''}>${ICON[a === 'delflow' ? 'trash' : a === 'del' ? 'trash' : a]}</button>`).join('');
 }
 const ICON = {
+  file: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3"/></svg>',
   plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
   up: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3M4 7l4-4 4 4"/></svg>',
   info: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 7.2V11M8 5v.1"/></svg>',
@@ -969,12 +1226,15 @@ const ICON = {
   mdown: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6 8 10.5 12.5 6"/></svg>',
   close: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
   trash: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5"/></svg>',
+  link: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6.2 9.8-1.5 1.5a2.5 2.5 0 0 1-3.5-3.5l2.3-2.3A2.5 2.5 0 0 1 7 5.4M9.8 6.2l1.5-1.5a2.5 2.5 0 0 1 3.5 3.5l-2.3 2.3A2.5 2.5 0 0 1 9 10.6M5.5 10.5l5-5"/></svg>',
+  unlink: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5.4 10.6-.7.7a2.5 2.5 0 0 1-3.5-3.5l1.1-1.1M10.6 5.4l.7-.7a2.5 2.5 0 0 1 3.5 3.5l-1.1 1.1M3 3l10 10"/></svg>',
 };
 function renderTools() {
   const design = tab === 'design';
   const canMsg = flow().participants.length > 0;
+  const prev = nav.length > 1 ? nav[nav.length - 2] : null, prevEntry = prev && entryByKey(prev.fileKey);
   $('#tools').innerHTML = `
-    ${nav.length > 1 ? `<button class="pbtn" data-tool="up" title="Back to ${esc(doc.flows[nav[nav.length - 2]].name)}">${ICON.up}<span class="hide-narrow">Up</span></button>` : ''}
+    ${prev ? `<button class="pbtn" data-tool="up" title="Back to ${esc(prevEntry?.doc.flows[prev.fid]?.name || prev.fid)}">${ICON.up}<span class="hide-narrow">Up</span></button>` : ''}
     ${design ? `<button class="pbtn" data-tool="addp">${ICON.plus}Participant</button><button class="pbtn" data-tool="addm" ${canMsg ? '' : 'disabled'}>${ICON.plus}Message</button>` : ''}
     <button class="pbtn" data-tool="flowinfo" title="Flow details">${ICON.info}<span class="hide-narrow">Flow</span></button>
     <span class="sep hide-narrow"></span>
@@ -1018,9 +1278,10 @@ function computeLayout(f, design) {
   return { xs, ys, lines, loops, bls, heads, hh, top, firstY, endY, w, h: endY + 12 };
 }
 function textBlock(lines, x, y0, lh, cls, anchor, link) {
-  const ok = linkOk(link);
+  const r = resolveLink(link), hasLink = !!link, missing = hasLink && !r;
   const tsp = lines.map((l, k) => `<tspan x="${x}" y="${y0 + k * lh}">${esc(l)}</tspan>`).join('');
-  return `<text class="${cls}${ok ? ' lnk' : ''}"${ok ? ` data-link="${esc(link)}"` : ''} text-anchor="${anchor}">${ok ? `<title>${tab === 'design' ? 'Ctrl+click to open' : 'Open'} ${esc(doc.flows[link].name)}</title>` : ''}${tsp}</text>`;
+  const tooltip = missing ? `Missing link: ${esc(link)} (target file or flow is not loaded)` : r ? `${tab === 'design' ? 'Ctrl+click to open' : 'Open'} ${esc(r.entry.doc.flows[r.fid].name)} in ${esc(entryLabel(r.entry))}` : '';
+  return `<text class="${cls}${hasLink ? ' lnk' : ''}${missing ? ' lnk-missing' : ''}"${hasLink ? ` data-link="${esc(link)}"` : ''} text-anchor="${anchor}">${tooltip ? `<title>${tooltip}</title>` : ''}${tsp}</text>`;
 }
 
 function headSvg(p, i) {
@@ -1139,8 +1400,15 @@ function renderDiagram(animate) {
 // ---------- inspector ----------
 function flowOptions(current, exclude) {
   let o = `<option value="">None</option>`;
-  for (const [id, f] of Object.entries(doc.flows)) if (id !== exclude) o += `<option value="${esc(id)}" ${id === current ? 'selected' : ''}>${esc(f.name)}</option>`;
-  if (current && !doc.flows[current]) o += `<option value="${esc(current)}" selected>(missing) ${esc(current)}</option>`;
+  const selected = resolveLink(current);
+  for (const e of workspace) {
+    const opts = Object.entries(e.doc.flows).filter(([id]) => !(e.key === activeFileKey && id === exclude)).map(([id, f]) => {
+      const value = linkFor(e, id), on = selected ? selected.entry.key === e.key && selected.fid === id : value === current;
+      return `<option value="${esc(value)}" ${on ? 'selected' : ''}>${esc(f.name)}</option>`;
+    }).join('');
+    if (opts) o += `<optgroup label="${esc(entryLabel(e))}">${opts}</optgroup>`;
+  }
+  if (current && !selected) o += `<option class="missing-link" value="${esc(current)}" selected>(missing) ${esc(current)}</option>`;
   o += `<option value="__new">New flow…</option>`;
   return o;
 }
@@ -1151,8 +1419,8 @@ function renderInspector() {
   const f = flow(), fid = flowId(), design = tab === 'design';
   const tagTxt = t.kind === 'flow' ? 'Flow' : t.kind === 'p' ? (n.type === 'participant' ? 'Participant' : n.type) : '';
   const editTitle = design;
-  const openBtn = (link) => linkOk(link) ? `<button type="button" class="sqbtn" data-insp="open" title="Open ${esc(doc.flows[link].name)}" aria-label="Open ${esc(doc.flows[link].name)}">${ICON.drill}</button>` : '';
-  const acts = actBtns(t, 'data-insp') + (!design && t.kind !== 'flow' && linkOk(n.link) ? `<button type="button" data-insp="open" title="Open ${esc(doc.flows[n.link].name)}" aria-label="Open ${esc(doc.flows[n.link].name)}">${ICON.drill}</button>` : '') + (sel ? `<button type="button" data-insp="close" title="Close" aria-label="Close details">${ICON.close}</button>` : '');
+  const openBtn = (link) => link ? `<button type="button" class="sqbtn" data-insp="open" title="Open ${esc(linkText(link))}" aria-label="Open ${esc(linkText(link))}">${ICON.drill}</button>` : '';
+  const acts = actBtns(t, 'data-insp') + (!design && t.kind !== 'flow' && n.link ? `<button type="button" data-insp="open" title="Open ${esc(linkText(n.link))}" aria-label="Open ${esc(linkText(n.link))}">${ICON.drill}</button>` : '') + (sel ? `<button type="button" data-insp="close" title="Close" aria-label="Close details">${ICON.close}</button>` : '');
   const titleTxt = editTitle ? (t.kind === 'm' ? n.label : n.name) : (nodeTitle(t, n) || '(no label)');
   let h = `<div class="insp-hd"><div class="t">${tagTxt ? `<div class="kind-tag ${t.kind === 'flow' ? 'flow' : ''}">${esc(tagTxt)}</div>` : ''}<h2 id="inspTitle"${editTitle ? ` contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="${t.kind === 'm' ? 'Step label' : t.kind === 'p' ? 'Participant name' : 'Flow name'}" data-ph="${t.kind === 'm' ? 'Untitled step' : t.kind === 'p' ? 'Unnamed participant' : 'Untitled flow'}"` : ''}>${esc(titleTxt)}</h2></div>${acts ? `<div class="hd-acts">${acts}</div>` : ''}</div>`;
   if (design) {
@@ -1160,20 +1428,18 @@ function renderInspector() {
       const idx = f.participants.indexOf(n);
       h += `<div class="fields">
         <div class="fld"><span>Shape</span>${seg('f-type', SHAPE_OPTS, n.type, 'Shape')}</div>
-        <label class="fld"><span>ID</span><input id="f-id" class="mono" value="${esc(n.id)}" spellcheck="false"></label>
-        <div class="fld"><label for="f-link">Drill-down flow</label><div class="selrow"><select id="f-link">${flowOptions(n.link, fid)}</select>${openBtn(n.link)}</div></div>
+        <div class="fld"><label for="f-link">Drill-down flow</label><div class="selrow"><select id="f-link" class="${n.link && !linkOk(n.link) ? 'missing-link' : ''}">${flowOptions(n.link, fid)}</select>${openBtn(n.link)}</div></div>
       </div>`;
     } else if (t.kind === 'm') {
       const idx = f.messages.indexOf(n);
       h += `<div class="fields">
-        <div class="fld inline"><span>Arrow</span>${seg('f-kind', KIND_OPTS, n.kind, 'Arrow', true)}</div>
-        <div class="fld"><label for="f-link">Drill-down flow</label><div class="selrow"><select id="f-link">${flowOptions(n.link, fid)}</select>${openBtn(n.link)}</div></div>
+        <div class="fld inline"><span>Direction</span><div class="step-controls">${seg('f-dir', DIRECTION_OPTS, messageDirection(n, f), 'Direction', true)}<button type="button" class="style-toggle" id="f-style" aria-pressed="${n.kind === 'reply'}" title="${n.kind === 'reply' ? 'Dashed line — switch to solid' : 'Solid line — switch to dashed'}" aria-label="${n.kind === 'reply' ? 'Dashed line; switch to solid' : 'Solid line; switch to dashed'}">${SEG_SVG(`<path d="M2 7h22"${n.kind === 'reply' ? ' stroke-dasharray="4 3"' : ''}/>`)}</button></div></div>
+        <div class="fld"><label for="f-link">Drill-down flow</label><div class="selrow"><select id="f-link" class="${n.link && !linkOk(n.link) ? 'missing-link' : ''}">${flowOptions(n.link, fid)}</select>${openBtn(n.link)}</div></div>
       </div>`;
     } else {
       const refs = linkedFrom(fid);
       h += `<div class="fields">
-        <label class="fld"><span>Flow ID</span><input id="f-fid" class="mono" value="${esc(fid)}" spellcheck="false"></label>
-        ${refs.length ? `<div class="fld"><span>Opened from</span><div class="ref-list">${refs.map((r, i) => `<button class="ref" data-ref="${i}">${esc(trunc(r.label, 34))} <span>in ${esc(trunc(doc.flows[r.flow].name, 20))}</span></button>`).join('')}</div></div>` : `<div class="meta">Nothing links here yet. Pick this flow as a node's drill-down flow to connect it.</div>`}
+        ${refs.length ? `<div class="fld"><span>Opened from</span><div class="ref-list">${refs.map((r, i) => { const re = entryByKey(r.fileKey); return `<button class="ref" data-ref="${i}">${esc(trunc(r.label, 34))} <span>in ${esc(trunc(re.doc.flows[r.flow].name, 20))} · ${esc(entryLabel(re))}</span></button>`; }).join('')}</div></div>` : `<div class="meta">Nothing links here yet. Pick this flow as a node's drill-down flow to connect it.</div>`}
       </div>`;
     }
   } else {
@@ -1294,18 +1560,34 @@ function bindInspector(t, n) {
     });
   };
   bindSeg('f-type', 'type');
-  bindSeg('f-kind', 'kind');
+  const dir = document.getElementById('f-dir');
+  if (dir && t.kind === 'm') {
+    const pickDirection = (value) => {
+      const m = getNode(t), f = flow();
+      if (!m || m.from === m.to || messageDirection(m, f) === value) return;
+      commit(() => { [m.from, m.to] = [m.to, m.from]; });
+      document.querySelector('#f-dir [aria-checked="true"]')?.focus();
+    };
+    dir.addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b && b.getAttribute('aria-checked') !== 'true') pickDirection(b.dataset.v); });
+    dir.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+      e.preventDefault(); pickDirection(e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? 'left' : 'right');
+    });
+  }
+  on('f-style', 'click', () => {
+    const m = getNode(t); if (!m) return;
+    commit(() => { m.kind = m.kind === 'reply' ? 'sync' : 'reply'; });
+    document.getElementById('f-style')?.focus();
+  });
   on('f-link', 'change', (e) => {
     if (e.target.value === '__new') { e.target.value = n.link || ''; openLinkModal(t); return; }
     commit(() => { getNode(t).link = e.target.value; });
   });
-  on('f-id', 'change', (e) => renameParticipant(t.id, e.target.value.trim(), e.target));
   on('f-fname', 'input', (e) => { commit(() => { flow().name = e.target.value; }, { key: key('fname'), inspector: false }); setTitle(); });
-  on('f-fid', 'change', (e) => renameFlow(flowId(), e.target.value.trim(), e.target));
   $('#inspTop').querySelectorAll('[data-insp]').forEach((b) => b.addEventListener('click', () => inspAction(b.dataset.insp, t)));
   $('#inspTop').querySelectorAll('[data-ref]').forEach((b) => b.addEventListener('click', () => {
     const r = linkedFrom(flowId())[+b.dataset.ref];
-    nav = [r.flow]; sel = { kind: r.kind, id: r.id }; render(true); renderDiagram(true);
+    nav = [target(r.fileKey, r.flow)]; activateEntry(r.fileKey); sel = { kind: r.kind, id: r.id }; render(true); renderDiagram(true);
   }));
 }
 
@@ -1324,8 +1606,8 @@ function inspAction(a, t) {
 function renameParticipant(oldId, nid, input) {
   const f = flow();
   if (nid === oldId) return;
-  if (!/^[A-Za-z0-9_.-]+$/.test(nid)) { input.value = oldId; return toast('IDs can use letters, digits, dot, dash and underscore.'); }
-  if (f.participants.some((p) => p.id === nid)) { input.value = oldId; return toast(`“${nid}” is already used in this flow.`); }
+  if (!/^[A-Za-z0-9_.-]+$/.test(nid)) { input.value = oldId; return toastError('IDs can use letters, digits, dot, dash and underscore.'); }
+  if (f.participants.some((p) => p.id === nid)) { input.value = oldId; return toastError(`“${nid}” is already used in this flow.`); }
   commit(() => {
     f.participants.find((p) => p.id === oldId).id = nid;
     f.messages.forEach((m) => { if (m.from === oldId) m.from = nid; if (m.to === oldId) m.to = nid; });
@@ -1334,21 +1616,22 @@ function renameParticipant(oldId, nid, input) {
 }
 function renameFlow(oldId, nid, input) {
   if (nid === oldId) return;
-  if (!/^[A-Za-z0-9_.-]+$/.test(nid)) { input.value = oldId; return toast('Flow IDs can use letters, digits, dot, dash and underscore.'); }
-  if (doc.flows[nid]) { input.value = oldId; return toast(`A flow with ID “${nid}” already exists.`); }
+  if (!/^[A-Za-z0-9_.-]+$/.test(nid)) { input.value = oldId; return toastError('Flow IDs can use letters, digits, dot, dash and underscore.'); }
+  if (doc.flows[nid]) { input.value = oldId; return toastError(`A flow with ID “${nid}” already exists.`); }
   commit(() => {
     const flows = {};
     for (const [id, f] of Object.entries(doc.flows)) flows[id === oldId ? nid : id] = f;
     doc.flows = flows;
     for (const f of Object.values(flows)) for (const x of [...f.participants, ...f.messages]) if (x.link === oldId) x.link = nid;
-    nav = nav.map((x) => (x === oldId ? nid : x));
+    nav = nav.map((x) => (x.fileKey === activeFileKey && x.fid === oldId ? target(x.fileKey, nid) : x));
   });
 }
 function deleteFlow(fid) {
   commit(() => {
     delete doc.flows[fid];
     for (const f of Object.values(doc.flows)) for (const x of [...f.participants, ...f.messages]) if (x.link === fid) x.link = '';
-    nav = nav.slice(0, Math.max(1, nav.indexOf(fid)));
+    const at = nav.findIndex((x) => x.fileKey === activeFileKey && x.fid === fid);
+    nav = nav.slice(0, Math.max(1, at));
     sel = null;
   });
   toast('Flow deleted.', 'Undo', undo);
@@ -1390,10 +1673,17 @@ function addMessage(fromIdx, toIdx, at) {
   commit(() => { f.messages.splice(at ?? f.messages.length, 0, { id, from, to, label: kind === 'reply' ? 'Reply' : 'New message', kind, link: '', notes: '', badges: [] }); sel = { kind: 'm', id }; });
   focusField('inspTitle');
 }
-function addFlow() {
+function addFlow(fileKey = activeFileKey) {
+  if (fileKey !== activeFileKey) {
+    const e = entryByKey(fileKey);
+    if (!e) return;
+    nav = [target(e.key, Object.keys(e.doc.flows)[0])];
+    activateEntry(e.key);
+    sel = null;
+  }
   const name = `Flow ${Object.keys(doc.flows).length + 1}`;
   const id = uniq(slug(name), (x) => !!doc.flows[x]);
-  commit(() => { doc.flows[id] = { name, notes: '', participants: [], messages: [] }; nav = [id]; sel = null; });
+  commit(() => { doc.flows[id] = { name, notes: '', participants: [], messages: [] }; nav = [target(activeFileKey, id)]; sel = null; });
   if (tab !== 'design') setTab('design');
   renderDiagram(true);
   focusField('inspTitle');
@@ -1412,9 +1702,14 @@ function select(t) {
   renderDiagram(); renderInspector(); layoutClasses();
 }
 function drillTo(fid) {
-  if (!linkOk(fid)) return;
-  const at = nav.indexOf(fid);
-  if (at >= 0) nav = nav.slice(0, at + 1); else nav.push(fid);
+  const r = resolveLink(fid);
+  if (!r) {
+    if (fid) toastError(`Missing link: “${fid}”. The target file or flow is not loaded or does not exist.`);
+    return;
+  }
+  const next = target(r.entry.key, r.fid), at = nav.findIndex((x) => sameTarget(x, next));
+  if (at >= 0) nav = nav.slice(0, at + 1); else nav.push(next);
+  activateEntry(r.entry.key);
   sel = null;
   render(true); renderDiagram(true);
   $('#canvasWrap').scrollTo({ left: 0, top: 0 });
@@ -1422,7 +1717,7 @@ function drillTo(fid) {
 function drill(t) {
   const n = getNode(t);
   if (!n) return;
-  if (linkOk(n.link)) return drillTo(n.link);
+  if (n.link) return drillTo(n.link);
   if (tab === 'design') openLinkModal(t);
   else toast('This node has no drill-down flow yet. Link one in Design.');
 }
@@ -1435,16 +1730,54 @@ function openModal(html) {
   m.hidden = false;
   return m.firstElementChild;
 }
+
+function openNewFileModal() {
+  const d = openModal(`<h3>Create YAML file</h3><p>Create a new diagram file in this workspace.${directoryHandle ? ' It will also be saved in your opened folder.' : ' You can download it later from the File menu.'}</p><label class="fld"><span>File name</span><input id="new-file-name" value="new-diagram.yaml" spellcheck="false"></label><div class="foot"><button class="pbtn" id="new-file-cancel">Cancel</button><button class="pbtn primary" id="new-file-create">Create file</button></div>`);
+  const input = d.querySelector('#new-file-name'), create = d.querySelector('#new-file-create');
+  const run = async () => {
+    let name = input.value.trim().replace(/\\/g, '/');
+    if (!name || name.includes('/') || name === '.' || name === '..') { toastError('Enter a file name without folders.'); input.focus(); return; }
+    if (!/\.ya?ml$/i.test(name)) name += '.yaml';
+    if (workspace.some((e) => entryKey(e.path) === entryKey(name))) { toastError('A file with this name already exists.'); input.focus(); return; }
+    create.disabled = true;
+    const title = stripYamlExt(name).replace(/[-_]+/g, ' ');
+    const freshDoc = { title: title || 'Untitled diagram', flows: { main: { name: 'Main flow', notes: '', participants: [], messages: [] } } };
+    const text = toYaml(freshDoc);
+    let handle = null;
+    if (directoryHandle) {
+      try {
+        handle = await directoryHandle.getFileHandle(name, { create: true });
+        const writable = await handle.createWritable();
+        await writable.write(text); await writable.close();
+      } catch (err) { create.disabled = false; toastError('Could not create the file in this folder. Check write permission.'); return; }
+    }
+    const e = makeFileEntry({ name, path: name, handle, text, doc: freshDoc, inDirectory: !!handle });
+    workspace.push(e); workspace.sort((a, b) => entryLabel(a).localeCompare(entryLabel(b)));
+    activeFileKey = e.key; doc = e.doc; nav = [target(e.key, 'main')]; sel = null;
+    if (handle) fileSyncEnabled = true;
+    undoStack = []; redoStack = []; yamlDirty = true; yamlInvalid = false;
+    closeModal(); setFileState('saved'); save();
+    if (tab === 'yaml') syncYaml();
+    render(true); renderDiagram(true);
+    toast(`Created ${name}.`);
+  };
+  create.addEventListener('click', run);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); run(); } });
+  d.querySelector('#new-file-cancel').addEventListener('click', closeModal);
+  requestAnimationFrame(() => { input.focus(); input.select(); });
+}
+
 function openLinkModal(t) {
   const n = getNode(t), f = flow(), fid = flowId();
   const title = nodeTitle(t, n) || 'this step';
-  const others = Object.entries(doc.flows).filter(([id]) => id !== fid);
+  const source = activeEntry();
+  const others = workspace.flatMap((e) => Object.entries(e.doc.flows).filter(([id]) => !(e.key === source.key && id === fid)).map(([id, x]) => ({ e, id, x, link: linkFor(e, id, source) })));
   const d = openModal(`
     <h3>Drill into “${esc(trunc(title, 40))}”</h3>
     <p>Link this ${t.kind === 'p' ? 'participant' : 'message'} to a flow. Double-clicking it then opens that flow.</p>
     <label class="fld"><span>New flow name</span><input id="nf-name" value="${esc(trunc(title, 48))}"></label>
     <div class="foot" style="justify-content:flex-start"><button class="pbtn primary" id="nf-create">Create flow and open it</button></div>
-    ${others.length ? `<div class="or">Or link an existing flow</div><div class="pick">${others.map(([id, x]) => `<button class="ref" data-pick="${esc(id)}">${esc(x.name)} <span>${x.messages.length} steps</span></button>`).join('')}</div>` : ''}
+    ${others.length ? `<div class="or">Or link an existing flow</div><div class="pick">${others.map(({ e, x, link }) => `<button class="ref" data-pick="${esc(link)}">${esc(x.name)} <span>${esc(entryLabel(e))} · ${x.messages.length} steps</span></button>`).join('')}</div>` : ''}
     <div class="foot"><button class="pbtn" id="nf-cancel">Cancel</button></div>`);
   const inp = d.querySelector('#nf-name');
   setTimeout(() => { inp.focus(); inp.select(); }, 20);
@@ -1457,7 +1790,7 @@ function openLinkModal(t) {
     if (t.kind === 'p') copyP(n.id);
     else { copyP(n.from); copyP(n.to); seedM.push({ id: 'm1', from: n.from, to: n.to, label: n.label, kind: n.kind, link: '', notes: '', badges: [] }); }
     closeModal();
-    commit(() => { doc.flows[nid] = { name, notes: '', participants: seedP, messages: seedM }; getNode(t, f).link = nid; nav.push(nid); sel = null; });
+    commit(() => { doc.flows[nid] = { name, notes: '', participants: seedP, messages: seedM }; getNode(t, f).link = nid; nav.push(target(activeFileKey, nid)); sel = null; });
     renderDiagram(true);
     toast(`Created ${name}. Use the breadcrumb or Up to go back.`);
   };
@@ -1467,7 +1800,7 @@ function openLinkModal(t) {
   d.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => {
     closeModal();
     commit(() => { getNode(t, f).link = b.dataset.pick; });
-    toast(`Linked to ${doc.flows[b.dataset.pick].name}. Double-click to open it.`);
+    toast(`Linked to ${linkText(b.dataset.pick)}. Double-click to open it.`);
   }));
 }
 function confirmModal(title, body, label, fn) {
@@ -1477,14 +1810,19 @@ function confirmModal(title, body, label, fn) {
   setTimeout(() => d.querySelector('#c-yes').focus(), 20);
 }
 let toastT = null;
-function toast(msg, actLabel, act) {
+function toast(msg, actLabel, act, opts = {}) {
   const el = $('#toast');
+  const isError = opts.kind === 'error';
   el.innerHTML = `<span>${esc(msg)}</span>${actLabel ? `<button>${esc(actLabel)}</button>` : ''}`;
-  if (actLabel) el.querySelector('button').addEventListener('click', () => { el.hidden = true; act(); });
+  el.dataset.kind = isError ? 'error' : 'status';
+  el.setAttribute('role', isError ? 'alert' : 'status');
+  el.setAttribute('aria-live', isError ? 'assertive' : 'polite');
+  if (actLabel) el.querySelector('button').addEventListener('click', () => { el.hidden = true; clearTimeout(toastT); toastT = null; if (act) act(); });
   el.hidden = false;
   clearTimeout(toastT);
-  toastT = setTimeout(() => { el.hidden = true; }, actLabel ? 6000 : 3200);
+  toastT = opts.persistent ? null : setTimeout(() => { el.hidden = true; }, actLabel ? 6000 : 3200);
 }
+function toastError(msg) { toast(msg, 'OK', null, { kind: 'error', persistent: true }); }
 
 // ---------- canvas pointer handling ----------
 let drag = null, lastTap = { key: null, t: 0 };
@@ -1506,16 +1844,22 @@ function nearestLane(x) {
 function onDown(e) {
   if (e.button !== 0) return;
   const svg = $('#diagram');
+  let eventTarget = e.target;
+  if (inlineEd) {
+    finishInlineEdit(true);
+    const hit = document.elementFromPoint(e.clientX, e.clientY);
+    if (hit && svg.contains(hit)) eventTarget = hit;
+  }
   const pt = svgPoint(e);
-  const node = e.target.closest('[data-kind]');
-  const lane = e.target.closest('.lane');
+  const node = eventTarget.closest('[data-kind]');
+  const lane = eventTarget.closest('.lane');
   let under = null;
   if (lane) under = document.elementsFromPoint(e.clientX, e.clientY).find((el) => !el.classList.contains('lane') && el.closest && el.closest('#diagram [data-kind]'));
-  const ghost = e.target.closest('[data-act="addp"]');
-  drag = { x: pt.x, y: pt.y, cx: e.clientX, cy: e.clientY, moved: false, mode: null, node: node ? { kind: node.dataset.kind, id: node.dataset.id } : null, ghost: !!ghost, link: e.target.closest('[data-link]')?.dataset.link || null, mod: e.ctrlKey || e.metaKey };
-  drag.badge = e.target.closest('[data-badge]')?.dataset.badge ?? null;
+  const ghost = eventTarget.closest('[data-act="addp"]');
+  drag = { x: pt.x, y: pt.y, cx: e.clientX, cy: e.clientY, moved: false, mode: null, node: node ? { kind: node.dataset.kind, id: node.dataset.id } : null, ghost: !!ghost, link: eventTarget.closest('[data-link]')?.dataset.link || null, mod: e.ctrlKey || e.metaKey };
+  drag.badge = eventTarget.closest('[data-badge]')?.dataset.badge ?? null;
   if (under) { const un = under.closest('[data-kind]'); drag.under = { kind: un.dataset.kind, id: un.dataset.id }; drag.link = under.closest('[data-link]')?.dataset.link || null; drag.badge = under.closest('[data-badge]')?.dataset.badge ?? null; }
-  const anc = e.target.closest('[data-anchor]');
+  const anc = eventTarget.closest('[data-anchor]');
   if (tab === 'design' && anc && node) {
     const f = flow(), m = f.messages.find((x) => x.id === node.dataset.id), j = f.messages.indexOf(m);
     const other = anc.dataset.anchor === 'from' ? m.to : m.from;
@@ -1584,7 +1928,10 @@ function onUp(e) {
   if (d.moved && d.mode === 'anchor') {
     const to = nearestLane(svgPoint(e).x), f = flow();
     const m = f.messages.find((x) => x.id === d.msgId);
-    if (to >= 0 && m && m[d.end] !== f.participants[to].id) commit(() => { m[d.end] = f.participants[to].id; sel = { kind: 'm', id: m.id }; });
+    if (to >= 0 && m && m[d.end] !== f.participants[to].id) commit(() => {
+      m[d.end] = f.participants[to].id;
+      sel = { kind: 'm', id: m.id };
+    });
     else renderDiagram();
     return;
   }
@@ -1608,7 +1955,7 @@ function tap(t, link, badge, mod) {
   if (t && mod && tab === 'design' && t.kind !== 'flow') {
     lastTap = { key: null, t: 0 };
     const n = getNode(t);
-    if (n && linkOk(n.link)) drillTo(n.link);
+    if (n?.link) drillTo(n.link);
     else { if (!sel || sel.kind !== t.kind || sel.id !== t.id) select(t); openLinkModal(t); }
     return;
   }
@@ -1656,18 +2003,28 @@ function startInlineEdit(t) {
   const ta = document.createElement('textarea');
   ta.className = 'inline-ed';
   ta.value = value;
+  ta.rows = 1;
   ta.spellcheck = false;
   ta.setAttribute('aria-label', t.kind === 'p' ? 'Participant name' : 'Step label');
   const host = svg.parentElement, sr = svg.getBoundingClientRect(), hr = host.getBoundingClientRect();
   const ox = sr.left - hr.left, oy = sr.top - hr.top;
+  const maxW = w * zoom, minW = Math.min(maxW, (t.kind === 'p' ? 44 : 56) * zoom);
+  const anchorX = align === 'left' ? x * zoom : (x + w / 2) * zoom;
   Object.assign(ta.style, {
-    left: `${ox + x * zoom}px`, top: `${oy + y * zoom}px`, width: `${w * zoom}px`, minHeight: `${h * zoom}px`,
+    top: `${oy + y * zoom}px`, minHeight: `${(t.kind === 'p' ? HLH + 6 : LH + 6) * zoom}px`, maxWidth: `${maxW}px`,
     font: font.replace(/(\d+(?:\.\d+)?)px/, (_, px) => `${px * zoom}px`), textAlign: align,
   });
   host.appendChild(ta);
-  const grow = () => { ta.style.height = 'auto'; ta.style.height = `${ta.scrollHeight}px`; };
-  grow();
-  ta.addEventListener('input', grow);
+  const fit = () => {
+    const textW = tw(ta.value.replace(/\s+/g, ' ') || ' ', font) * zoom + 12;
+    const fieldW = Math.ceil(Math.min(maxW, Math.max(minW, textW)));
+    ta.style.width = `${fieldW}px`;
+    ta.style.left = `${ox + (align === 'left' ? anchorX : anchorX - fieldW / 2)}px`;
+    ta.style.height = 'auto';
+    ta.style.height = `${ta.scrollHeight}px`;
+  };
+  fit();
+  ta.addEventListener('input', fit);
   ta.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); finishInlineEdit(true); }
     else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finishInlineEdit(false); }
@@ -1684,14 +2041,108 @@ function finishInlineEdit(keep) {
   const v = ta.value.replace(/\s+/g, ' ').trim();
   ta.remove();
   const n = getNode(t);
-  if (keep && n && v !== n[prop] && (v || prop === 'label')) commit(() => { getNode(t)[prop] = v; });
+  if (keep && n && v !== n[prop] && (v || prop === 'label')) {
+    commit(() => { getNode(t)[prop] = v; }, { inspector: false });
+    const title = $('#inspTitle');
+    if (title && sel && sel.kind === t.kind && sel.id === t.id) title.textContent = v;
+  }
   else renderDiagram();
+}
+
+
+// ---------- cross-file flow map ----------
+function renderMap() {
+  const svg = $('#mapSvg');
+  const all = [], missing = new Map(), edges = [];
+  for (const e of workspace) for (const [fid, f] of Object.entries(e.doc.flows))
+    all.push({ key: encodeTarget(e.key, fid), file: e, fid, name:f.name, refs:0 });
+  const byKey = new Map(all.map(n => [n.key,n]));
+  for (const n of all) {
+    const f = n.file.doc.flows[n.fid];
+    for (const item of [...f.participants,...f.messages]) {
+      if (!item.link) continue;
+      const r = resolveLink(item.link, n.file);
+      const to = r ? encodeTarget(r.entry.key,r.fid) : `missing:${item.link}`;
+      if (!r && !missing.has(to)) missing.set(to,{key:to,name:item.link,file:null,refs:0});
+      edges.push({from:n.key,to,label:item.name || item.label || 'Reference',missing:!r});
+      n.refs++;
+    }
+  }
+  const nodes = all.concat([...missing.values()]);
+  const groupKeys = [...new Set(nodes.map(n => n.file ? n.file.key : '__missing'))];
+  const cols = Math.max(1,Math.min(4,Math.ceil(Math.sqrt(nodes.length / 1.8))));
+  const nodeW=205,nodeH=62,cellW=274,cellH=116,left=65,top=90;
+  const positions = new Map(); let row=0;
+  let content='';
+  for (const group of groupKeys) {
+    const groupNodes=nodes.filter(n => (n.file ? n.file.key : '__missing')===group);
+    content += `<text class="map-group-label" x="${left}" y="${top+row*cellH-26}">${esc(group==='__missing' ? 'Missing references' : entryLabel(groupNodes[0].file))}</text>`;
+    groupNodes.forEach((n,i) => { const x=left+(i%cols)*cellW,y=top+(row+Math.floor(i/cols))*cellH; positions.set(n.key,{x,y}); });
+    row+=Math.ceil(groupNodes.length/cols)+1;
+  }
+  const width=Math.max(680,left*2+cols*cellW),height=Math.max(450,top+row*cellH+20);
+  const counts=new Map();
+  edges.forEach(e=>{const key=e.from+'>'+e.to;counts.set(key,(counts.get(key)||0)+1);});
+  const seen=new Set();
+  content=`<defs><marker id="mapArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="var(--link)"/></marker><marker id="mapMissArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="var(--danger)"/></marker></defs>`+content;
+  for (const edge of edges) {
+    const pair=edge.from+'>'+edge.to; if (seen.has(pair)) continue; seen.add(pair);
+    const a=positions.get(edge.from),b=positions.get(edge.to); if (!a||!b)continue;
+    const count=counts.get(pair);
+    if (a===b || edge.from===edge.to) {
+      const x=a.x+nodeW-18,y=a.y;
+      content+=`<path class="map-edge" data-map-from="${esc(edge.from)}" data-map-to="${esc(edge.to)}" d="M${x} ${y} C${x+85} ${y-72},${x-70} ${y-72},${x+20} ${y}" marker-end="url(#mapArrow)"><title>Self-reference${count>1?' ('+count+')':''}</title></path>`;
+    } else {
+      const ax=a.x+nodeW/2, ay=a.y+nodeH/2,bx=b.x+nodeW/2,by=b.y+nodeH/2;
+      const vx=bx-ax,vy=by-ay, horizontal=Math.abs(vx)>Math.abs(vy)*.9;
+      let x1,y1,x2,y2;
+      if(horizontal){x1=a.x+(vx>0?nodeW:0);y1=ay;x2=b.x+(vx>0?0:nodeW);y2=by;}
+      else{x1=ax;y1=a.y+(vy>0?nodeH:0);x2=bx;y2=b.y+(vy>0?0:nodeH);}
+      const d=horizontal?`M${x1} ${y1} C${x1+(x2-x1)*.5} ${y1},${x1+(x2-x1)*.5} ${y2},${x2} ${y2}`:`M${x1} ${y1} C${x1} ${y1+(y2-y1)*.5},${x2} ${y1+(y2-y1)*.5},${x2} ${y2}`;
+      content+=`<path class="map-edge${edge.missing?' missing':''}" data-map-from="${esc(edge.from)}" data-map-to="${esc(edge.to)}" d="${d}" marker-end="url(#${edge.missing?'mapMissArrow':'mapArrow'})"><title>${esc(edge.label)}${count>1?' and '+(count-1)+' more':''}${edge.missing?' — missing target':''}</title></path>`;
+    }
+  }
+  for (const n of nodes) {
+    const p=positions.get(n.key),active=n.file?.key===activeFileKey && n.fid===flowId();
+    const label=n.name.length>25?n.name.slice(0,24)+'…':n.name;
+    content+=`<g class="map-node${active?' map-active':''}" data-map-node="${esc(n.key)}"><rect class="map-box" x="${p.x}" y="${p.y}" width="${nodeW}" height="${nodeH}" rx="10" ${n.file?'':'stroke-dasharray="5 3" style="stroke:var(--danger)"'}/><text x="${p.x+12}" y="${p.y+26}">${esc(label)}</text><text class="map-sub" x="${p.x+12}" y="${p.y+45}">${n.file?'Open flow':'Unresolved link'}</text><title>${esc(n.name)}${n.file?' — click to open flow':' — missing flow'}</title></g>`;
+  }
+  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+  svg.setAttribute('width',width);svg.setAttribute('height',height);svg.innerHTML=content;
+  $('#mapSummary').textContent=`${all.length} flows · ${edges.length} references · ${missing.size} missing`;
+}
+function highlightMapFlow(key) {
+  const svg = $('#mapSvg');
+  const edges = [...svg.querySelectorAll('[data-map-from]')];
+  const linked = new Set([key]);
+  if (key) edges.forEach((edge) => {
+    if (edge.dataset.mapFrom === key) linked.add(edge.dataset.mapTo);
+    if (edge.dataset.mapTo === key) linked.add(edge.dataset.mapFrom);
+  });
+  svg.querySelectorAll('[data-map-node]').forEach((node) => {
+    node.classList.toggle('map-focus', !!key && node.dataset.mapNode === key);
+    node.classList.toggle('map-related', !!key && node.dataset.mapNode !== key && linked.has(node.dataset.mapNode));
+    node.classList.toggle('map-dim', !!key && !linked.has(node.dataset.mapNode));
+  });
+  edges.forEach((edge) => {
+    const connected = edge.dataset.mapFrom === key || edge.dataset.mapTo === key;
+    edge.classList.toggle('map-related', !!key && connected);
+    edge.classList.toggle('map-dim', !!key && !connected);
+  });
+}
+function openMapFlow(encoded) {
+  if (encoded.startsWith('missing:')) { toastError('This reference has no matching flow.'); return; }
+  const x=decodeTarget(encoded);
+  if (!entryByKey(x.fileKey)?.doc.flows[x.fid]) return;
+  nav=[x];activateEntry(x.fileKey);sel=null;setTab('design');
 }
 
 // ---------- tabs ----------
 function setTab(t) {
-  if (tab === 'yaml' && t !== 'yaml' && yamlInvalid) toast('The YAML has errors. Design and Preview show the last valid version.');
+  if (tab === 'yaml' && t !== 'yaml' && yamlInvalid) toastError('The YAML has errors. Design and Preview show the last valid version.');
   tab = t;
+  $('#body').classList.remove('yaml-files-open');
+  $('#btnYamlFiles').setAttribute('aria-expanded', 'false');
   try { localStorage.setItem(STORE_TAB, t); } catch (e) {}
   if (t === 'preview' && sel && sel.kind === 'flow') sel = null;
   render(true);
@@ -1710,6 +2161,7 @@ function applyYaml(text) {
     const { doc: nd, warnings } = normalize(raw);
     commit(() => { doc = nd; }, { key: 'yaml', fromYaml: true });
     yamlInvalid = false; lastWarnings = warnings;
+    const e = activeEntry(); if (e) e.warnings = warnings;
     yamlEd.setMarkers([]);
     setStatus();
   } catch (e) {
@@ -1833,222 +2285,374 @@ function loadMonaco() {
 
 // ---------- file commands ----------
 function loadText(text, label) {
-  setFileHandle(null);
   try {
     const { doc: nd, warnings } = normalize(jsyaml.load(text));
-    commit(() => { doc = nd; nav = [Object.keys(nd.flows)[0]]; sel = null; });
-    lastWarnings = warnings;
-    renderDiagram(true);
-    toast(`${label}${warnings.length ? ` with ${warnings.length} warning${warnings.length > 1 ? 's' : ''}` : ''}.`, 'Undo', undo);
+    const name = 'diagram.yaml', e = makeFileEntry({ name, path: name, text, doc: nd, warnings });
+    installWorkspace([e], e.key);
+    save(); render(true); renderDiagram(true);
+    toast(`${label}${warnings.length ? ` with ${warnings.length} warning${warnings.length > 1 ? 's' : ''}` : ''}.`);
     return true;
   } catch (e) {
     setTab('yaml');
     if (yamlEd) { yamlEd.set(text); applyYaml(text); } else pendingYaml = text;
-    toast(`${label.startsWith('Opened') ? 'That diagram' : 'That file'} has errors. Fix them in the YAML tab.`);
+    toastError(`${label.startsWith('Opened') ? 'That diagram' : 'That file'} has errors. Fix them in the YAML tab.`);
     return false;
   }
 }
 async function copyYaml() {
   const text = toYaml(doc);
   try { await navigator.clipboard.writeText(text); toast('YAML copied to the clipboard.'); }
-  catch (e) { setTab('yaml'); toast('Copy was blocked here. Select all in the editor and copy.'); }
+  catch (e) { setTab('yaml'); toastError('Copy was blocked here. Select all in the editor and copy.'); }
 }
 function fileCmd(cmd) {
   $('#fileMenu').hidden = true; $('#btnFile').setAttribute('aria-expanded', 'false');
   if (cmd === 'copy') copyYaml();
   if (cmd === 'open') openFile();
+  if (cmd === 'openfolder') openFolder();
   if (cmd === 'save') saveFile();
   if (cmd === 'saveas') saveFileAs();
   if (cmd === 'download') downloadYaml();
-  if (cmd === 'unlink') { const n = fileHandle && fileHandle.name; setFileHandle(null); toast(`Stopped saving to ${n}. Your edits stay in this browser.`); }
-  if (cmd === 'new') confirmModal('Start a new diagram?', 'The current diagram is replaced. You can undo this, or copy its YAML first.', 'New diagram', () => {
+  if (cmd === 'unlink') {
+    workspace.forEach((e) => { clearTimeout(e.saveT); e.handle = null; e.file = null; e.dirty = false; e.state = 'saved'; });
+    directoryHandle = null; fileSyncEnabled = false; persistBrowserWorkspace(); setFileState('saved');
+    toast('Disconnected the opened files. Your edits stay in this browser.');
+  }
+  if (cmd === 'new') confirmModal('Start a new diagram?', 'The current diagram is replaced. Copy its YAML first if you need to keep it.', 'New diagram', () => {
     loadText('title: Untitled diagram\nflows:\n  main:\n    name: Main flow\n    participants: []\n    messages: []\n', 'New diagram');
   });
-  if (cmd === 'share') copyShareLink();
-  if (cmd === 'restore') {
-    let prev = null; try { prev = localStorage.getItem(STORE_PREV); } catch (e) {}
-    if (prev) confirmModal('Restore your previous diagram?', 'This brings back the diagram you had open before the last one opened from a link. The current diagram is replaced, and you can undo this.', 'Restore', () => loadText(prev, 'Previous diagram restored'));
-  }
-  if (cmd === 'example') confirmModal('Load the example?', 'The card payment example replaces the current diagram. You can undo this.', 'Load example', () => loadText(EXAMPLE, 'Example loaded'));
+
+
+  if (cmd === 'example') confirmModal('Load the example?', 'The card payment example replaces the current diagram.', 'Load example', () => loadText(EXAMPLE, 'Example loaded'));
 }
 
-// ---------- files: open, save back to the opened file, download ----------
-// Chrome and Edge support the File System Access API, so edits save straight back to the opened file.
-// Other browsers fall back to a plain file picker for opening and Download for saving.
+// ---------- files: open folders/files, save, watch, and drop ----------
 const IN_FRAME = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
-// Embedded frames (such as a Claude artifact) block file pickers and downloads, so those commands are hidden there.
 const FS_API = !IN_FRAME && typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function';
+const FS_DIR_API = !IN_FRAME && typeof window.showDirectoryPicker === 'function';
 const YAML_TYPES = [{ description: 'Lifeline diagram (YAML)', accept: { 'text/yaml': ['.yaml', '.yml'] } }];
-let fileHandle = null, fileState = 'saved', fileSaveT = null, fileWriting = null, fileDirty = false;
+let refreshingFiles = false;
+let fallbackFileResolve = null, fallbackFolderResolve = null;
 const fileName = () => `${slug(doc.title) || 'diagram'}.yaml`;
-function setFileHandle(h) {
-  fileHandle = h; fileDirty = false; clearTimeout(fileSaveT);
-  setFileState('saved');
+function makeFileEntry({ name, path, handle = null, file = null, text, doc: fileDoc, warnings = [], lastModified = 0, size = 0, inDirectory = false }) {
+  const shownPath = String(path || name || 'diagram.yaml').replace(/\\/g, '/');
+  return { key: entryKey(shownPath), name: name || shownPath.split('/').pop(), path: shownPath, handle, file, doc: fileDoc, warnings, lastText: text, lastModified, size, inDirectory, state: 'saved', dirty: false, saveT: null, writing: null };
 }
-function setFileState(st) {
-  fileState = st;
+function uniqueEntryKeys(entries) {
+  const seen = new Map();
+  entries.forEach((e) => { const base = e.key; let n = seen.get(base) || 0; seen.set(base, n + 1); if (n) e.key = `${base}:${n + 1}`; });
+  return entries;
+}
+function installWorkspace(entries, key, dir = null, restoring = false) {
+  workspace.forEach((e) => clearTimeout(e.saveT));
+  if (!restoring) perFilePaused.clear();
+  workspace = uniqueEntryKeys(entries).sort((a, b) => entryLabel(a).localeCompare(entryLabel(b)));
+  directoryHandle = dir;
+  fileSyncEnabled = !!dir || workspace.some((x) => x.handle);
+  const e = entryByKey(key) || workspace[0]; if (!e) return false;
+  activeFileKey = e.key; doc = e.doc; lastWarnings = e.warnings || [];
+  nav = [target(e.key, Object.keys(e.doc.flows)[0])]; sel = null;
+  undoStack = []; redoStack = []; yamlDirty = true; yamlInvalid = false;
+  persistBrowserWorkspace();
+  setFileState(e.state); updateRestore();
+  if (tab === 'yaml') syncYaml();
+  return true;
+}
+function setFileState(st, e = activeEntry()) {
+  if (e) e.state = st;
+  if (e && e.key !== activeFileKey) return;
   const chip = $('#fileChip');
-  chip.hidden = !fileHandle;
-  $('#cmdUnlink').hidden = !fileHandle;
-  if (!fileHandle) return;
-  const label = { saved: 'Saved', saving: 'Saving…', blocked: 'Allow saving', error: 'Save failed · retry' }[st];
-  chip.dataset.state = st;
-  chip.innerHTML = `<i></i><span class="fn">${esc(fileHandle.name)}</span><span class="st">${label}</span>`;
-  chip.title = st === 'blocked' ? 'Click to give Lifeline permission to save to this file' : st === 'error' ? 'Click to try saving again' : 'Edits save to this file automatically';
+  chip.hidden = !e;
+  $('#cmdUnlink').hidden = !workspace.some(x => x.handle) && !directoryHandle;
+  if (!e) return;
+  const folder = !!directoryHandle;
+  const linked = folder || !!e.handle;
+  const syncing = linked && fileSyncEnabled && (folder || !perFilePaused.has(entryKey(e.path)));
+  const members = folder ? workspace.filter(x => x.inDirectory && !perFilePaused.has(entryKey(x.path))) : [e];
+  const blocked = members.some(x => x.state === 'blocked');
+  const failed = members.some(x => x.state === 'error');
+  const saving = members.some(x => x.state === 'saving');
+  const status = blocked ? 'Allow saving' : failed ? 'Save failed' : saving ? 'Saving…' : syncing ? 'Synced' : 'Paused';
+  const label = folder ? status : e.handle ? (syncing ? ({ saved: 'Saved', saving: 'Saving…', blocked: 'Allow saving', error: 'Save failed · retry' }[st] || 'Saved') : e.dirty ? 'Unsaved' : 'Saved') : 'Browser copy';
+  const syncTitle = folder ? (blocked ? 'Allow access to this folder' : syncing ? 'Pause syncing every file in this folder' : 'Resume syncing every file in this folder') : e.handle ? (st === 'blocked' ? 'Reconnect this file and allow saving' : syncing ? 'Pause automatic saving' : 'Resume automatic saving') : 'Link this diagram to a local YAML file';
+  chip.dataset.state = blocked ? 'blocked' : failed ? 'error' : syncing ? 'saved' : 'paused';
+  chip.innerHTML = `<button type="button" class="file-sync" data-enabled="${syncing}" aria-pressed="${syncing}" aria-label="${esc(syncTitle)}" title="${esc(syncTitle)}">${linked ? ICON.link : ICON.unlink}</button><span class="fn" title="${esc(folder ? directoryHandle.name : entryLabel(e))}">${esc(folder ? directoryHandle.name : entryLabel(e))}</span><span class="st">${esc(label)}</span>`;
 }
-function scheduleFileSave() {
-  if (!fileHandle) return;
-  fileDirty = true;
-  if (fileState === 'saved') setFileState('saving');
-  clearTimeout(fileSaveT);
-  fileSaveT = setTimeout(() => writeFile(false), 600);
+async function toggleFileSync() {
+  const current = activeEntry();
+  if (directoryHandle) {
+    if (workspace.some(e => e.inDirectory && e.state === 'blocked')) {
+      try { if (await directoryHandle.requestPermission({ mode: 'readwrite' }) !== 'granted') { toastError('Folder access not granted.'); return; } } catch (_) { toastError('Folder access not granted.'); return; }
+      for (const e of workspace.filter(x => x.inDirectory)) { e.state = 'saved'; if (e.dirty && !perFilePaused.has(entryKey(e.path))) scheduleFileSave(e); }
+      fileSyncEnabled = true; setFileState(activeEntry()?.state || 'saved'); await refreshWorkspace(true); return;
+    }
+  } else if (current && !current.handle) { await saveFileAs(); return; }
+  if (current?.handle && current.state === 'blocked') {
+    try {
+      const permission = await current.handle.requestPermission({ mode: 'readwrite' });
+      if (permission === 'granted') { fileSyncEnabled = true; if (current.dirty) await writeEntry(current, true); else setFileState('saved', current); void storeHandles(); return; }
+    } catch (_) {}
+    toastError('File access was not granted.'); return;
+  }
+  if (!workspace.some((e) => e.handle) && !directoryHandle) return;
+  fileSyncEnabled = !fileSyncEnabled;
+  workspace.forEach((e) => clearTimeout(e.saveT));
+  void storeHandles();
+  if (!fileSyncEnabled) {
+    workspace.forEach((e) => { if (e.handle) e.state = e.dirty ? 'paused' : 'saved'; });
+    setFileState(activeEntry()?.state || 'saved');
+    void storeHandles();
+    toast('Automatic file sync paused.');
+    return;
+  }
+  workspace.forEach((e) => {
+    if (!e.handle) return;
+    if (e.dirty && !perFilePaused.has(entryKey(e.path))) scheduleFileSave(e);
+    else e.state = 'saved';
+  });
+  setFileState(activeEntry()?.state || 'saved');
+  void storeHandles();
+  await refreshWorkspace(true);
+  toast('Automatic file sync resumed.');
 }
-async function writeFile(fromGesture) {
-  const h = fileHandle;
+function scheduleFileSave(e = activeEntry()) {
+  if (!e?.handle) return;
+  e.dirty = true;
+  if (!fileSyncEnabled || perFilePaused.has(entryKey(e.path))) { setFileState('paused', e); return; }
+  if (e.state !== 'saving') setFileState('saving', e);
+  clearTimeout(e.saveT);
+  e.saveT = setTimeout(() => writeEntry(e, false), 600);
+}
+async function writeEntry(e, fromGesture) {
+  const h = e?.handle;
   if (!h) return true;
-  if (fileWriting) { await fileWriting; if (!fileDirty && !fromGesture) return true; }
+  if ((!fileSyncEnabled || perFilePaused.has(entryKey(e.path))) && !fromGesture) { setFileState(e.dirty ? 'paused' : 'saved', e); return false; }
+  if (e.writing) { await e.writing; if (!e.dirty && !fromGesture) return true; }
   const run = (async () => {
     try {
       let perm = await h.queryPermission({ mode: 'readwrite' });
       if (perm !== 'granted' && fromGesture) perm = await h.requestPermission({ mode: 'readwrite' });
-      if (perm !== 'granted') { if (h === fileHandle) setFileState('blocked'); return false; }
-      fileDirty = false;
+      if (perm !== 'granted') { setFileState('blocked', e); return false; }
+      e.dirty = false;
+      const text = toYaml(e.doc);
       const w = await h.createWritable();
-      await w.write(toYaml(doc));
+      await w.write(text);
       await w.close();
-      if (h === fileHandle) setFileState(fileDirty ? 'saving' : 'saved');
+      const file = await h.getFile();
+      e.lastText = text; e.lastModified = file.lastModified; e.size = file.size;
+      setFileState(e.dirty ? 'saving' : 'saved', e);
       return true;
-    } catch (e) {
-      if (h === fileHandle) setFileState('error');
+    } catch (err) {
+      setFileState('error', e);
       return false;
     }
   })();
-  fileWriting = run;
+  e.writing = run;
   const ok = await run;
-  fileWriting = null;
-  if (ok && fileDirty && h === fileHandle) scheduleFileSave();
+  e.writing = null;
+  if (ok) void storeHandles();
+  if (ok && e.dirty) scheduleFileSave(e);
   return ok;
 }
-async function openFile() {
-  if (!FS_API) { $('#fileInput').click(); return; }
+async function entryFromHandle(h, path = h.name) {
+  const file = await h.getFile(), text = await file.text();
+  const { doc: fileDoc, warnings } = normalize(jsyaml.load(text));
+  return makeFileEntry({ name: h.name, path, handle: h, text, doc: fileDoc, warnings, lastModified: file.lastModified, size: file.size });
+}
+async function entryFromFile(file, path = file.webkitRelativePath || file.name) {
+  const text = await file.text(), { doc: fileDoc, warnings } = normalize(jsyaml.load(text));
+  return makeFileEntry({ name: file.name, path, file, text, doc: fileDoc, warnings, lastModified: file.lastModified, size: file.size });
+}
+async function collectDirectory(dir, prefix = '') {
+  const out = [];
+  for await (const [name, h] of dir.entries()) {
+    const path = prefix ? `${prefix}/${name}` : name;
+    if (h.kind === 'directory') out.push(...await collectDirectory(h, path));
+    else if (/\.ya?ml$/i.test(name)) out.push({ handle: h, path });
+  }
+  return out;
+}
+async function loadHandleSet(items, dir = null, preferredPath = '') {
+  const entries = [], bad = [];
+  for (const item of items) {
+    try { entries.push(item.handle ? await entryFromHandle(item.handle, item.path) : await entryFromFile(item.file, item.path)); }
+    catch (e) { bad.push(`${item.path || item.handle?.name || item.file?.name}: ${e.reason || e.message || e}`); }
+  }
+  if (!entries.length) { toastError(bad.length ? `No valid Lifeline YAML files found (${bad[0]}).` : 'No YAML files found.'); return false; }
+  entries.forEach((e) => { e.inDirectory = !!dir; });
+  const needle = preferredPath.replace(/^file:\/\/+/, '').replace(/\\/g, '/').toLowerCase();
+  const preferred = entries.find((e) => {
+    const path = e.path.toLowerCase(), name = e.name.toLowerCase();
+    return needle && (needle === path || needle === name || needle.endsWith(`/${path}`) || needle.endsWith(`/${name}`));
+  }) || entries[0];
+  installWorkspace(entries, preferred.key, dir);
+  render(true); renderDiagram(true);
+  const openedMsg = `Opened ${entries.length} file${entries.length === 1 ? '' : 's'}${bad.length ? `; skipped ${bad.length} invalid file${bad.length === 1 ? '' : 's'}` : ''}.`;
+  if (bad.length) toastError(openedMsg); else toast(openedMsg);
+  return true;
+}
+async function openFile(opts = {}) {
+  if (!FS_API) return new Promise((resolve) => { fallbackFileResolve = resolve; $('#fileInput').click(); });
   let h;
   try { [h] = await window.showOpenFilePicker({ types: YAML_TYPES, multiple: false }); }
-  catch (e) { if (e && e.name === 'AbortError') return; $('#fileInput').click(); return; }
-  // Ask for write access while the click still counts as a user gesture.
+  catch (e) {
+    if (e && e.name === 'AbortError') return false;
+    return new Promise((resolve) => { fallbackFileResolve = resolve; $('#fileInput').click(); });
+  }
   let perm = 'prompt';
   try { perm = await h.requestPermission({ mode: 'readwrite' }); } catch (e) {}
-  let text;
-  try { text = await (await h.getFile()).text(); }
-  catch (e) { toast(`Couldn't read ${h.name}.`); return; }
-  if (!loadText(text, `Opened ${h.name}`)) return;
-  setFileHandle(h);
-  if (perm !== 'granted') setFileState('blocked');
+  const ok = await loadHandleSet([{ handle: h, path: h.name }], null, opts.preferredPath || '');
+  if (ok && perm !== 'granted') setFileState('blocked');
+  return ok;
+}
+async function openFolder(opts = {}) {
+  if (!FS_DIR_API) return new Promise((resolve) => { fallbackFolderResolve = resolve; $('#folderInput').click(); });
+  let dir;
+  try { dir = await window.showDirectoryPicker({ mode: 'readwrite' }); }
+  catch (e) {
+    if (e?.name === 'AbortError') return false;
+    return new Promise((resolve) => { fallbackFolderResolve = resolve; $('#folderInput').click(); });
+  }
+  const items = await collectDirectory(dir);
+  return loadHandleSet(items, dir, opts.preferredPath || '');
 }
 async function saveFile() {
   if (!FS_API) return downloadYaml();
-  if (!fileHandle) return saveFileAs();
-  clearTimeout(fileSaveT);
-  if (await writeFile(true)) toast(`Saved to ${fileHandle.name}.`);
+  const e = activeEntry();
+  if (!e?.handle) return saveFileAs();
+  clearTimeout(e.saveT);
+  if (await writeEntry(e, true)) toast(`Saved to ${e.name}.`);
 }
 async function saveFileAs() {
-  if (!FS_API) return downloadYaml();
+  if (!FS_API) { toastError('Local file linking requires Chrome or Edge on a secure page outside an embedded preview. Use Download to save a copy.'); return; }
+  const e = activeEntry();
   let h;
-  try { h = await window.showSaveFilePicker({ suggestedName: fileHandle ? fileHandle.name : fileName(), types: YAML_TYPES }); }
-  catch (e) { if (!e || e.name !== 'AbortError') toast("Couldn't open the save dialog here. Use Download instead."); return; }
-  setFileHandle(h);
-  if (await writeFile(true)) toast(`Saved to ${h.name}. Edits now save there automatically.`);
+  try { h = await window.showSaveFilePicker({ suggestedName: e?.name || fileName(), types: YAML_TYPES }); }
+  catch (e) { if (!e || e.name !== 'AbortError') toastError("Couldn't open the save dialog here. Use Download instead."); return; }
+  const oldKey = e.key;
+  const newKey = entryKey(h.name);
+  const collision = workspace.some(x => x !== e && x.key === newKey);
+  if (collision) { toastError('A file with this name is already in the workspace.'); return; }
+  e.handle = h; e.name = h.name; e.path = h.name; e.key = newKey; e.inDirectory = false; e.state = 'saved'; fileSyncEnabled = true;
+  nav = nav.map(x => x.fileKey === oldKey ? target(newKey, x.fid) : x);
+  activeFileKey = newKey;
+  if (await writeEntry(e, true)) { persistBrowserWorkspace(); renderRail(); setFileState('saved', e); toast(`Saved to ${h.name}. Edits now save there automatically.`); }
 }
 function downloadYaml() {
   const url = URL.createObjectURL(new Blob([toYaml(doc)], { type: 'text/yaml' }));
   const a = document.createElement('a');
-  a.href = url; a.download = fileHandle ? fileHandle.name : fileName();
+  a.href = url; a.download = activeEntry()?.name || fileName();
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-
-// ---------- links: open a diagram from the URL, copy a share link ----------
-function b64urlToBytes(str) {
-  let t = str.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
-  while (t.length % 4) t += '=';
-  const bin = atob(t);
-  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
-}
-function bytesToB64url(bytes) {
-  let bin = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-async function inflateRaw(bytes) {
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  return new Response(stream).text();
-}
-async function deflateRaw(text) {
-  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream('deflate-raw'));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
-}
-// Decodes %XX escapes, leaving malformed ones as written so a slightly broken link still opens.
-function lenientDecode(v) {
-  return v.replace(/(?:%[0-9a-fA-F]{2})+/g, (m) => { try { return decodeURIComponent(m); } catch (e) { return m; } });
-}
-function linkParams() {
-  const out = {};
-  const take = (str) => {
-    if (!str) return;
-    for (const part of str.split('&')) {
-      const i = part.indexOf('=');
-      if (i < 1) continue;
-      const k = part.slice(0, i).toLowerCase();
-      if (!(k in out)) out[k] = part.slice(i + 1);
-    }
-  };
-  take(location.hash.slice(1));
-  take(location.search.slice(1));
-  return out;
-}
-async function importFromUrl() {
-  const q = linkParams();
-  if (!q.yaml && !q.b64 && !q.z && !q.src) return;
-  let text;
+async function refreshEntry(e) {
+  if (!e.handle || e.dirty || e.writing) return false;
+  let file;
+  try { file = await e.handle.getFile(); } catch (_) { return false; }
+  if (file.lastModified === e.lastModified && file.size === e.size) return false;
+  const text = await file.text();
+  e.lastModified = file.lastModified; e.size = file.size;
+  if (text === e.lastText) return false;
   try {
-    if (q.z) text = await inflateRaw(b64urlToBytes(q.z));
-    else if (q.b64) text = new TextDecoder().decode(b64urlToBytes(q.b64));
-    else if (q.yaml) text = lenientDecode(q.yaml);
-    else {
-      const res = await fetch(lenientDecode(q.src));
-      if (!res.ok) throw new Error(`the server answered ${res.status}`);
-      text = await res.text();
-    }
-  } catch (e) {
-    toast(`Couldn't read the diagram in this link (${e.message || e}).`);
-    return;
+    const parsed = normalize(jsyaml.load(text));
+    e.doc = parsed.doc; e.warnings = parsed.warnings; e.lastText = text;
+    if (e.key === activeFileKey) { doc = e.doc; lastWarnings = e.warnings; fixNav(); markYamlDirty(); render(true); }
+    return true;
+  } catch (err) {
+    toastError(`${entryLabel(e)} changed on disk but now has YAML errors.`);
+    return false;
   }
-  try { const cur = localStorage.getItem(STORE); if (cur && cur !== text) localStorage.setItem(STORE_PREV, cur); } catch (e) {}
-  const ok = loadText(text, 'Opened diagram from link');
-  try { history.replaceState(null, '', location.pathname); } catch (e) {}
-  updateRestore();
-  if (!ok) return;
-  const flowParam = q.flow ? lenientDecode(q.flow) : '';
-  if (flowParam && doc.flows[flowParam]) { nav = [flowParam]; sel = null; }
-  const t = q.tab ? lenientDecode(q.tab) : 'preview';
-  setTab(['yaml', 'design', 'preview'].includes(t) ? t : 'preview');
-  renderDiagram(true);
 }
+async function refreshWorkspace(rescanAll = false) {
+  if (!fileSyncEnabled || refreshingFiles) return;
+  // Resuming folder sync explicitly re-discovers previously unlinked files.
+  // Rescan does not override persisted per-file sync preferences.
+  refreshingFiles = true;
+  try {
+    let changed = false;
+    if (directoryHandle) {
+      try {
+        const items = await collectDirectory(directoryHandle), paths = new Set(items.map((x) => entryKey(x.path)));
+        if (!fileSyncEnabled) return;
+        const removed = items.length ? workspace.filter((e) => e.inDirectory && !e.dirty && !e.writing && !paths.has(entryKey(e.path))) : [];
+        if (removed.length) { workspace = workspace.filter((e) => !removed.includes(e)); changed = true; }
+        for (const item of items) if (!workspace.some((e) => entryKey(e.path) === entryKey(item.path))) {
+          try { const e = await entryFromHandle(item.handle, item.path); e.inDirectory = true; workspace.push(e); changed = true; } catch (_) {}
+        }
+      } catch (_) {}
+    }
+    for (const e of [...workspace]) if (!perFilePaused.has(entryKey(e.path))) changed = await refreshEntry(e) || changed;
+    if (!workspace.length) return;
+    if (!entryByKey(activeFileKey)) { const e = workspace[0]; activeFileKey = e.key; doc = e.doc; nav = [target(e.key, Object.keys(e.doc.flows)[0])]; sel = null; changed = true; }
+    if (changed) { workspace.sort((a, b) => entryLabel(a).localeCompare(entryLabel(b))); fixNav(); render(true); setStatus(); setFileState(activeEntry().state); }
+  } finally { refreshingFiles = false; }
+}
+
 function updateRestore() {
   let has = false; try { has = !!localStorage.getItem(STORE_PREV); } catch (e) {}
-  $('#cmdRestore').hidden = !has;
+  // URL-based restore has been removed.
 }
-async function copyShareLink() {
-  const base = /\.github\.io$/.test(location.hostname) ? `${location.origin}${location.pathname.replace(/open\/?(index\.html)?$/, '')}` : APP_URL;
-  let url;
-  try { url = `${base}#z=${bytesToB64url(await deflateRaw(toYaml(doc)))}&flow=${encodeURIComponent(flowId())}`; }
-  catch (e) { url = `${base}#b64=${bytesToB64url(new TextEncoder().encode(toYaml(doc)))}`; }
-  try { await navigator.clipboard.writeText(url); toast(`Share link copied (${url.length.toLocaleString()} characters).`); }
-  catch (e) { toast('Copy was blocked here, so the link could not be copied.'); }
+function setZoom(next, clientX, clientY) {
+  const wrap = $('#canvasWrap'), svg = $('#diagram'), old = zoom;
+  next = Math.min(2, Math.max(.4, +next.toFixed(2)));
+  if (next === old) return;
+  finishInlineEdit(true);
+  const before = svg.getBoundingClientRect();
+  const cx = clientX ?? (wrap.getBoundingClientRect().left + wrap.clientWidth / 2);
+  const cy = clientY ?? (wrap.getBoundingClientRect().top + wrap.clientHeight / 2);
+  const lx = (cx - before.left) / old, ly = (cy - before.top) / old;
+  zoom = next; renderTools(); renderDiagram();
+  const after = svg.getBoundingClientRect();
+  wrap.scrollLeft += after.left + lx * zoom - cx;
+  wrap.scrollTop += after.top + ly * zoom - cy;
+}
+let canvasPan = null, spaceHeld = false;
+function canvasPanDown(e) {
+  const wrap = $('#canvasWrap'), svg = $('#diagram');
+  const blank = e.target === wrap || e.target === svg || e.target.classList.contains('canvas-inner');
+  if (!(e.button === 1 || (e.button === 0 && (spaceHeld || blank)))) return;
+  finishInlineEdit(true);
+  canvasPan = { id: e.pointerId, x: e.clientX, y: e.clientY, left: wrap.scrollLeft, top: wrap.scrollTop, moved: false, clear: e.button === 0 && blank && !spaceHeld };
+  wrap.classList.add('panning');
+  try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault(); e.stopPropagation();
+}
+function canvasPanMove(e) {
+  if (!canvasPan || canvasPan.id !== e.pointerId) return;
+  const dx = e.clientX - canvasPan.x, dy = e.clientY - canvasPan.y;
+  if (Math.hypot(dx, dy) > 3) canvasPan.moved = true;
+  $('#canvasWrap').scrollTo(canvasPan.left - dx, canvasPan.top - dy);
+}
+function canvasPanEnd(e) {
+  if (!canvasPan || canvasPan.id !== e.pointerId) return;
+  const p = canvasPan; canvasPan = null; $('#canvasWrap').classList.remove('panning');
+  if (p.clear && !p.moved && sel) select(null);
+}
+async function openDropped(dataTransfer) {
+  const items = [], dirs = [];
+  for (const item of [...(dataTransfer.items || [])]) {
+    if (item.kind !== 'file') continue;
+    let h = null;
+    try { h = item.getAsFileSystemHandle ? await item.getAsFileSystemHandle() : null; } catch (_) {}
+    if (h?.kind === 'directory') dirs.push(h);
+    else if (h?.kind === 'file' && /\.ya?ml$/i.test(h.name)) items.push({ handle: h, path: h.name });
+  }
+  if (dirs.length) {
+    const dir = dirs[0];
+    try { await dir.requestPermission?.({ mode: 'readwrite' }); } catch (_) {}
+    return loadHandleSet(await collectDirectory(dir), dir);
+  }
+  if (!items.length) for (const file of [...(dataTransfer.files || [])]) if (/\.ya?ml$/i.test(file.name)) items.push({ file, path: file.webkitRelativePath || file.name });
+  return items.length ? loadHandleSet(items) : (toastError('Drop a .yaml or .yml file, or a folder containing them.'), false);
 }
 
 // ---------- wiring ----------
 function wire() {
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  $('#btnMap').addEventListener('click', () => setTab(tab === 'map' ? 'design' : 'map'));
+  $('#mapReset').addEventListener('click', () => { $('#mapScroll').scrollTo(0,0); });
+  $('#mapSvg').addEventListener('click', (e) => { const n=e.target.closest('[data-map-node]'); if(n)openMapFlow(n.dataset.mapNode); });
+  $('#mapSvg').addEventListener('pointerover', (e) => { const n=e.target.closest('[data-map-node]'); if(n)highlightMapFlow(n.dataset.mapNode); });
+  $('#mapSvg').addEventListener('pointerout', (e) => { const n=e.target.closest('[data-map-node]'); if(n && !n.contains(e.relatedTarget)) highlightMapFlow(null); });
   $('#btnUndo').addEventListener('click', undo);
   $('#btnRedo').addEventListener('click', redo);
   $('#btnFile').addEventListener('click', (e) => {
@@ -2057,38 +2661,52 @@ function wire() {
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('#fileMenu')) { $('#fileMenu').hidden = true; $('#btnFile').setAttribute('aria-expanded', 'false'); } });
   $('#fileMenu').querySelectorAll('[data-cmd]').forEach((b) => b.addEventListener('click', () => fileCmd(b.dataset.cmd)));
-  $('#fileChip').addEventListener('click', () => { if (fileState === 'blocked' || fileState === 'error') saveFile(); });
+  $('#fileChip').addEventListener('click', (event) => {
+    if (event.target.closest('.file-sync')) { toggleFileSync(); return; }
+    const e = activeEntry();
+    if (event.target.closest('.st') && e && (e.state === 'blocked' || e.state === 'error')) saveFile();
+  });
   if (!FS_API) document.querySelectorAll('.fs-only').forEach((b) => { b.hidden = true; });
   if (IN_FRAME) document.querySelectorAll('.dl-only').forEach((b) => { b.hidden = true; });
-  window.addEventListener('beforeunload', (e) => { if (fileHandle && (fileDirty || fileWriting)) { e.preventDefault(); e.returnValue = ''; } });
-  $('#fileInput').addEventListener('change', (e) => {
+  window.addEventListener('beforeunload', (e) => { if (workspace.some((x) => x.dirty || x.writing)) { e.preventDefault(); e.returnValue = ''; } });
+  $('#fileInput').addEventListener('change', async (e) => {
     const file = e.target.files[0]; if (!file) return;
-    const r = new FileReader();
-    r.onload = () => loadText(String(r.result), `Opened ${file.name}`);
-    r.readAsText(file); e.target.value = '';
+    const ok = await loadHandleSet([{ file, path: file.name }]); e.target.value = '';
+    if (fallbackFileResolve) { fallbackFileResolve(ok); fallbackFileResolve = null; }
+  });
+  $('#folderInput').addEventListener('change', async (e) => {
+    const files = [...e.target.files].filter((f) => /\.ya?ml$/i.test(f.name));
+    const ok = await loadHandleSet(files.map((file) => ({ file, path: file.webkitRelativePath || file.name }))); e.target.value = '';
+    if (fallbackFolderResolve) { fallbackFolderResolve(ok); fallbackFolderResolve = null; }
   });
   $('#docTitle').addEventListener('input', (e) => { fitTitle(); commit(() => { doc.title = e.target.value; }, { key: 'title', inspector: false }); });
-  $('#btnAddFlow').addEventListener('click', addFlow);
+  $('#btnNewFile').addEventListener('click', openNewFileModal);
+  $('#btnYamlFiles').addEventListener('click', () => { const open = $('#body').classList.toggle('yaml-files-open'); $('#btnYamlFiles').setAttribute('aria-expanded', String(open)); });
   wireEditorPane();
-  window.addEventListener('hashchange', importFromUrl);
   const ctrlCursor = (e) => $('#diagram').classList.toggle('ctrl-held', tab === 'design' && (e.ctrlKey || e.metaKey));
   window.addEventListener('keydown', ctrlCursor); window.addEventListener('keyup', ctrlCursor); window.addEventListener('blur', () => $('#diagram').classList.remove('ctrl-held'));
   $('#tree').addEventListener('click', railClick);
-  $('#flowSelect').addEventListener('change', (e) => { nav = [e.target.value]; sel = null; render(true); renderDiagram(true); });
+  $('#flowSelect').addEventListener('change', (e) => { const x = decodeTarget(e.target.value); nav = [x]; activateEntry(x.fileKey); sel = null; render(true); renderDiagram(true); });
   $('#crumbs').addEventListener('click', (e) => {
     const b = e.target.closest('[data-crumb]'); if (!b) return;
     const i = +b.dataset.crumb; if (i === nav.length - 1) return;
-    nav = nav.slice(0, i + 1); sel = null; render(true); renderDiagram(true);
+    nav = nav.slice(0, i + 1); activateEntry(nav[i].fileKey); sel = null; render(true); renderDiagram(true);
   });
   $('#tools').addEventListener('click', (e) => {
     const b = e.target.closest('[data-tool]'); if (!b) return;
     const t = b.dataset.tool;
     if (t === 'addp') addParticipant();
     if (t === 'addm') addMessage();
-    if (t === 'up' && nav.length > 1) { nav.pop(); sel = null; render(true); renderDiagram(true); }
+    if (t === 'up' && nav.length > 1) { nav.pop(); activateEntry(nav[nav.length - 1].fileKey); sel = null; render(true); renderDiagram(true); }
     if (t === 'flowinfo') { sel = { kind: 'flow' }; render(true); }
-    if (t === 'zin' || t === 'zout') { zoom = Math.min(2, Math.max(.4, +(zoom + (t === 'zin' ? .1 : -.1)).toFixed(2))); renderTools(); renderDiagram(); }
+    if (t === 'zin' || t === 'zout') setZoom(zoom + (t === 'zin' ? .1 : -.1));
   });
+  const wrap = $('#canvasWrap');
+  wrap.addEventListener('wheel', (e) => { e.preventDefault(); setZoom(zoom * Math.exp(-e.deltaY * .0015), e.clientX, e.clientY); }, { passive: false });
+  wrap.addEventListener('pointerdown', canvasPanDown, true);
+  wrap.addEventListener('pointermove', canvasPanMove);
+  wrap.addEventListener('pointerup', canvasPanEnd);
+  wrap.addEventListener('pointercancel', canvasPanEnd);
   const svg = $('#diagram');
   svg.addEventListener('pointerdown', onDown);
   svg.addEventListener('pointermove', onMove);
@@ -2098,6 +2716,7 @@ function wire() {
   document.addEventListener('keydown', (e) => {
     const inField = e.target.closest && e.target.closest('input, textarea, select, .monaco-editor, [contenteditable]');
     const cmdKey = (e.metaKey || e.ctrlKey) && !e.altKey ? e.key.toLowerCase() : '';
+    if (e.code === 'Space' && !inField) { spaceHeld = true; wrap.classList.add('panning'); e.preventDefault(); }
     if (cmdKey === 's') { e.preventDefault(); e.shiftKey ? saveFileAs() : saveFile(); return; }
     if (cmdKey === 'o') { e.preventDefault(); openFile(); return; }
     if (e.key === 'Escape') { if (!$('#modal').hidden) return closeModal(); if (sel && !inField) { select(null); } return; }
@@ -2113,33 +2732,119 @@ function wire() {
     if (e.key === 'Enter' && sel && sel.kind !== 'flow') { if (tab === 'design' && !(e.ctrlKey || e.metaKey)) { e.preventDefault(); startInlineEdit(sel); } else drill(sel); }
     if (e.key === 'F2' && sel && sel.kind !== 'flow' && tab === 'design') { e.preventDefault(); startInlineEdit(sel); }
   });
+  document.addEventListener('keyup', (e) => { if (e.code === 'Space') { spaceHeld = false; if (!canvasPan) wrap.classList.remove('panning'); } });
+  window.addEventListener('blur', () => { spaceHeld = false; canvasPan = null; wrap.classList.remove('panning'); });
+  document.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); wrap.classList.add('drop-target'); } });
+  document.addEventListener('dragleave', (e) => { if (!e.relatedTarget) wrap.classList.remove('drop-target'); });
+  document.addEventListener('drop', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); wrap.classList.remove('drop-target'); openDropped(e.dataTransfer); } });
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
   mq.addEventListener && mq.addEventListener('change', applyMonacoTheme);
   new MutationObserver(applyMonacoTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   window.matchMedia('(max-width: 860px)').addEventListener?.('change', () => layoutClasses());
+  setInterval(refreshWorkspace, 1600);
+}
+function removeWorkspaceFile(key) {
+  const e = entryByKey(key);
+  if (!e) return;
+  const linked = !!(e.handle || e.file || e.inDirectory);
+  const name = entryLabel(e);
+  confirmModal(linked ? `Unlink ${name}?` : `Delete ${name}?`,
+    linked ? 'Remove this file from the workspace without deleting the file from your computer.' : 'Delete this browser-only file and its flows from browser storage?',
+    linked ? 'Unlink' : 'Delete', () => {
+      clearTimeout(e.saveT);
+
+      workspace = workspace.filter(x => x !== e);
+      // Keep the folder handle even when its final visible file is unlinked.
+      // Resuming sync can then discover every file in the folder again.
+      if (!workspace.length) {
+        const raw = { title:'Untitled diagram', flows:{ main:{ name:'Main flow', participants:[], messages:[] } } };
+        const fresh = makeFileEntry({ name:'diagram.yaml', path:'diagram.yaml', text:jsyaml.dump(raw), doc:normalize(raw).doc });
+        workspace = [fresh];
+      }
+      const next = entryByKey(activeFileKey) || workspace[0];
+      activeFileKey = next.key;
+      doc = next.doc;
+      nav = [target(next.key, Object.keys(next.doc.flows)[0])];
+      sel = null; undoStack = []; redoStack = [];
+      yamlDirty = true; yamlInvalid = false;
+      fileSyncEnabled = fileSyncEnabled && (!!directoryHandle || workspace.some(x => x.handle));
+      persistBrowserWorkspace();
+      if (tab === 'yaml') syncYaml();
+      setFileState(next.state || 'saved');
+      render(true);
+      toast(linked ? 'File unlinked. The disk file was not deleted.' : 'Browser file deleted.');
+    });
+}
+async function toggleEntrySync(key) {
+  const e = entryByKey(key);
+  if (!e?.handle) return;
+  const path = entryKey(e.path);
+  if (perFilePaused.has(path)) {
+    perFilePaused.delete(path);
+    if (fileSyncEnabled) {
+      try {
+        if (await e.handle.queryPermission({mode:'readwrite'}) !== 'granted' && await e.handle.requestPermission({mode:'readwrite'}) !== 'granted') {
+          perFilePaused.add(path); toastError('File access not granted.'); renderRail(); return;
+        }
+      } catch (_) { perFilePaused.add(path); toastError('File access not granted.'); renderRail(); return; }
+      if (e.dirty) scheduleFileSave(e); else await refreshEntry(e);
+    }
+    toast('File sync enabled.');
+  } else {
+    perFilePaused.add(path); clearTimeout(e.saveT); e.state = 'paused';
+    toast('File sync paused.');
+  }
+  await storeHandles(); render(true); setFileState(activeEntry()?.state || 'saved');
 }
 function railClick(e) {
+  const sync = e.target.closest('[data-sync-file]');
+  if (sync) { void toggleEntrySync(sync.dataset.syncFile); return; }
+  const remove = e.target.closest('[data-remove-file]');
+  if (remove) { removeWorkspaceFile(remove.dataset.removeFile); return; }
+  const add = e.target.closest('[data-add-flow]');
+  if (add) { addFlow(add.dataset.addFlow); return; }
   const b = e.target.closest('[data-flow]'); if (!b) return;
-  nav = [b.dataset.flow]; sel = null; render(true); renderDiagram(true);
+  if (tab === 'yaml' && yamlT) { clearTimeout(yamlT); yamlT = null; if (yamlEd) applyYaml(yamlEd.get()); }
+  $('#body').classList.remove('yaml-files-open');
+  $('#btnYamlFiles').setAttribute('aria-expanded', 'false');
+  nav = [target(b.dataset.file, b.dataset.flow)]; activateEntry(b.dataset.file); sel = null; render(true); renderDiagram(true);
 }
 
 // ---------- boot ----------
-function boot() {
-  let text = null;
-  try { text = localStorage.getItem(STORE); } catch (e) {}
-  let loaded = null;
-  if (text) { try { loaded = normalize(jsyaml.load(text)); } catch (e) { loaded = null; } }
-  if (!loaded) loaded = normalize(jsyaml.load(EXAMPLE));
+function showStartupChoice() {
+  const d = openModal(`<h3>Open a workspace</h3><p>Choose how to start working in Lifeline.</p><div class="foot" style="flex-wrap:wrap"><button class="pbtn" id="startup-folder">Open folder…</button><button class="pbtn" id="startup-file">Open file…</button><button class="pbtn primary" id="startup-browser">Use browser storage</button></div>`);
+  const choose = async (fn) => { const ok = await fn(); if (ok) closeModal(); };
+  d.querySelector('#startup-folder').addEventListener('click', () => choose(openFolder));
+  d.querySelector('#startup-file').addEventListener('click', () => choose(openFile));
+  d.querySelector('#startup-browser').addEventListener('click', () => { closeModal(); persistBrowserWorkspace(); });
+}
+async function boot() {
+  const BLANK = 'title: Untitled diagram\nflows:\n  main:\n    name: Main flow\n    participants: []\n    messages: []\n';
+  let loaded = normalize(jsyaml.load(BLANK));
   doc = loaded.doc; lastWarnings = loaded.warnings;
-  nav = [firstFlow()];
-  try { const t = localStorage.getItem(STORE_TAB); if (['yaml', 'design', 'preview'].includes(t)) tab = t; } catch (e) {}
+  const initial = makeFileEntry({ name: 'browser.yaml', path: 'browser.yaml', text: BLANK, doc, warnings: lastWarnings });
+  workspace = [initial]; activeFileKey = initial.key; nav = [target(initial.key, firstFlow())];
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORE_FILES) || 'null');
+    let drafts = stored?.files || [];
+    if (!drafts.length && localStorage.getItem(STORE)) drafts = [{ name: 'browser.yaml', path: 'browser.yaml', text: localStorage.getItem(STORE) }];
+    if (drafts.length) {
+      const entries = drafts.map(f => {
+        const parsed = normalize(jsyaml.load(f.text));
+        return makeFileEntry({ name: f.name, path: f.path, text: f.text, doc: parsed.doc, warnings: parsed.warnings });
+      });
+      workspace = uniqueEntryKeys(entries);
+      const chosen = entryByKey(stored?.active) || workspace[0];
+      activeFileKey = chosen.key; doc = chosen.doc; lastWarnings = chosen.warnings;
+      nav = [target(chosen.key, Object.keys(doc.flows)[0])];
+      hasBrowserDrafts = true;
+    }
+  } catch (_) {}
+  try { const t = localStorage.getItem(STORE_TAB); if (['yaml', 'design', 'preview', 'map'].includes(t)) tab = t; } catch (_) {}
   if (isNarrow()) zoom = .8;
-  wire();
-  render(true);
-  setStatus();
-  updateRestore();
-  loadMonaco();
-  importFromUrl();
+  await restoreHandles();
+  wire(); render(true); setStatus(); updateRestore(); loadMonaco();
+  if (!hasBrowserDrafts && !restoredFileWorkspace) showStartupChoice();
 }
 if (typeof jsyaml === 'undefined') {
   document.getElementById('app').innerHTML = '<p style="padding:24px">The YAML library could not load. Check your connection and reload the page.</p>';

@@ -10,9 +10,11 @@ flows:
         name: Customer
         type: actor
       - id: checkout
-        name: Checkout UI
+        name: CHEESE
+        link: diagram#flow-4
       - id: payments
         name: Payments API
+        link: diagram#fraud-scoring
         notes: Idempotency key is required on POST /payments.
       - id: fraud
         name: Fraud service
@@ -23,6 +25,10 @@ flows:
       - id: ledger
         name: Ledger
         type: database
+      - id: participant-7
+        name: Red
+      - id: participant-8
+        name: asdadaa
     messages:
       - id: m1
         from: customer
@@ -184,3 +190,7 @@ flows:
         to: payments
         label: 0110 approved
         kind: reply
+  flow-4:
+    name: Flow 4
+    participants: []
+    messages: []
