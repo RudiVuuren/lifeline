@@ -1,0 +1,74 @@
+name: Sign in
+notes: |-
+  A returning customer signs in. Other journeys start with a step that links here instead of repeating it.
+
+  **Outcome:** the customer has an authenticated session that expires after 15 minutes of inactivity.
+
+  **Rules**
+  - Five failed attempts within 15 minutes lock the account for 15 minutes.
+  - An error never reveals whether the email address exists.
+participants:
+  - id: customer
+    name: Customer
+    type: actor
+  - id: web
+    name: Web shop
+  - id: identity
+    name: Identity provider
+    type: external
+steps:
+  - id: s1
+    from: customer
+    to: web
+    label: Enter email and password
+    notes: The password field is never prefilled.
+  - id: s2
+    from: web
+    to: identity
+    label: POST /oauth/token
+    notes: Credentials go only to the identity provider.
+    badges:
+      - name: request
+        type: yaml
+        color: blue
+        content: |-
+          grant_type: password
+          username: ana@example.com
+  - alt:
+      - when: credentials valid
+        steps:
+          - id: s3
+            from: identity
+            to: web
+            label: 200 tokens
+            kind: reply
+            notes: The access token is kept in memory, not local storage.
+            badges:
+              - name: response
+                type: yaml
+                color: teal
+                content: |-
+                  access_token: eyJhbGciOi...
+                  expires_in: 900
+              - name: "session: active"
+                color: green
+                content: The customer is signed in until the token expires.
+          - id: s4
+            from: web
+            to: customer
+            label: Show account menu
+            kind: reply
+      - when: credentials invalid
+        steps:
+          - id: s5
+            from: identity
+            to: web
+            label: 401 invalid_grant
+            kind: reply
+          - id: s6
+            from: web
+            to: customer
+            label: Show sign-in error
+            kind: reply
+            notes: Counts towards the lockout limit.
+    id: f1

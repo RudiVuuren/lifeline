@@ -1,0 +1,60 @@
+name: Settlement
+notes: |-
+  Nightly capture of authorised payments. The cut-off is 23:00 SAST; later authorisations settle the next night.
+
+  **Outcome:** every payment authorised before the cut-off is captured or marked failed.
+participants:
+  - id: events
+    name: Payment events
+    type: queue
+  - id: worker
+    name: Settlement worker
+  - id: db
+    name: "Payments Database: payments"
+    type: database
+  - id: network
+    name: Card network
+    type: external
+steps:
+  - id: s1
+    from: events
+    to: worker
+    label: Deliver payment.authorised
+    kind: async
+    notes: The worker only records the event; capture happens in the nightly batch.
+  - id: s2
+    from: worker
+    to: db
+    label: Select authorised payments before cut-off
+    badges:
+      - name: query
+        type: yaml
+        color: gray
+        content: |-
+          status: authorised
+          authorisedBefore: "2026-10-19T21:00:00Z"
+  - id: s3
+    from: db
+    to: worker
+    label: Batch of payments
+    kind: reply
+  - loop: for each payment in the batch
+    id: f1
+    steps:
+      - id: s4
+        from: worker
+        to: network
+        label: Capture (0220)
+      - id: s5
+        from: network
+        to: worker
+        label: Captured
+        kind: reply
+      - id: s6
+        from: worker
+        to: db
+        label: Mark settled
+        badges:
+          - name: "payment: settled"
+            color: green
+            content: Funds have moved to the merchant.

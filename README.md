@@ -1,83 +1,98 @@
 # Lifeline
 
-Lifeline is a sequence diagram builder that stores diagrams as YAML. Each YAML file contains one or more **flows**. Messages and participants can reference other flows, letting readers drill down from an overview into the details—even across multiple files.
+Lifeline is a planner for describing systems as linked sequence diagrams. A **workspace** is a folder: each `.yaml` file holds one flow, each `.md` file is a document, and subfolders group related files. Flows reference each other by path, so a journey can link to its prerequisites and drill down into the services behind each step. Together the files form a requirements specification that people can review and AI assistants can implement from.
 
 **Open Lifeline:** https://rudivuuren.github.io/lifeline/
 
 ## Features
 
-- **YAML, Design, and Preview:** Edit source YAML, build a diagram visually, or explore it in read-only mode. The file/flow sidebar remains available while editing YAML, so you can switch between files.
-- **Map:** Open the separate **Map** view to see flows across loaded files and directed connections between them. Select a flow to open it in Design. Hovering highlights the selected flow at 100% opacity, directly connected flows and links at 80%, and unrelated items at 25%.
-- **Visual editing:** Add and rearrange participants and messages. Double-click an item (or press Enter) to edit text directly on the canvas. Ctrl+click (Cmd+click on macOS) a linked item in Design to follow its reference; in Preview, click it directly.
-- **Linked flows:** Reference a flow in the same YAML file or in another file using a quoted cross-file reference such as `link: "refunds#refund-detail"`. Missing references remain red and underlined; selecting one shows an explanatory toast.
-- **Multi-file workspace:** Open a YAML file or an entire folder. The sidebar groups flows beneath their file headings and provides controls to create files, add flows to a specific file, and switch between files.
-- **Notes and badges:** Add notes to flows, participants, and messages. Messages can also carry YAML payload badges (such as `request` and `response`) and status badges (such as `"payment: authorised"`).
-- **Canvas navigation:** Scroll to zoom; drag an empty area (or hold Space and drag) to pan. YAML files or folders can also be dropped into the app to open them.
-- **File syncing:** In supported browsers, file-backed changes save to disk when syncing is enabled. A folder-level sync control manages the folder, while each file has its own matching sync toggle. Per-file sync preferences persist across reloads. External changes can be reloaded when syncing is enabled.
-- **File actions:** Create browser-only YAML files, link them to disk through the file control, or delete browser-only files. A disk-backed file can have its sync disabled without deleting it from disk. Use **Save as…** when available to choose a destination, or **Download** to export YAML.
+- **Folder workspaces:** Open a folder and Lifeline reads and saves its `.yaml` and `.md` files in place, including subfolders. External edits are picked up automatically. In Chrome and Edge the folder is remembered across reloads; the browser may ask for access again.
+- **Source, Design and Preview:** Edit a file's source, build a flow visually, or read it. Markdown documents show a side-by-side editor and preview in Design.
+- **File tree:** Files appear by name with their extension, grouped by folder. Double-click a file to rename it; links to it are updated across the workspace.
+- **Flow notes:** Each flow's `notes` is Markdown shown in a box below the diagram. Double-click the box to edit it.
+- **Frames:** `group`, `opt`, `loop` and `alt` frames show internal detail, optional steps, repetition and branches. Shift+drag over steps to wrap them in a frame. Frames can be collapsed on the canvas.
+- **Notes and badges:** Notes on steps, participants and frames are Markdown. Steps carry coloured badges for example payloads and entity states, with Markdown or YAML content. Hover a step or badge on the canvas to read its notes or content.
+- **Links:** Steps and participants link to flows or documents by workspace-relative path, for example `services/authorise-payment` or `docs/glossary.md`. A prerequisite is a step that links to its flow. Ctrl+click in Design, or click in Preview, to drill down; the breadcrumb shows the path taken.
+- **Map:** Shows every flow and document grouped by folder, with links as edges and unresolved references as missing nodes.
+- **Problems:** Lists files that fail to parse, steps with unknown participants, and unresolved links.
+- **Copy flow with dependencies:** Copies a flow and every flow or document it links to as one Markdown bundle, ready to give an AI assistant.
+- **Example workspace:** **Workspace -> Load example workspace** opens the example in memory; **Save to folder...** writes it to disk.
 
-## Opening and saving diagrams
-
-On startup, Lifeline restores an existing browser draft when available. Otherwise, choose to open a **folder**, open a **file**, or work with **browser storage**. The example diagram is only loaded when you select **File → Load example**.
-
-Use **File → Open file…** to open a `.yaml` or `.yml` file, or **Open folder…** to load YAML files from a folder. In browsers supporting the File System Access API, such as Chrome and Edge, Lifeline can retain file and folder handles across reloads using IndexedDB. The browser may ask you to grant access again.
-
-Browser-only drafts are stored locally in the browser. File-backed diagrams are saved to their files instead of being duplicated into localStorage. The folder sync toggle acts as a master switch; individual files can remain visible with their own syncing paused. Re-enabling folder sync re-scans the folder.
-
-Use **File → Copy YAML** to copy the currently selected diagram's YAML. Download a `.yaml` copy when direct filesystem access is unavailable or when you want an independent export.
-
-> Lifeline does not provide URL-based diagram loading or share-link generation. To share a diagram, share the YAML file (and any referenced YAML files), then open them in Lifeline.
-
-## YAML structure
+## Flow format
 
 ```yaml
-title: Card payments
-flows:
-  card-payment:
-    name: Card payment
-    participants:
-      - id: customer
-        name: Customer
-        type: actor
-      - id: payments
-        name: Payments API
-    messages:
-      - id: m1
-        from: customer
-        to: payments
-        label: Submit payment
-        link: "fraud#fraud-scoring"
-        badges:
-          - name: request
-            type: yaml
-            color: blue
-            content: |-
-              amount: 124900
-              currency: ZAR
+name: Checkout
+notes: |-
+  A signed-in customer pays by card.
+
+  **Outcome:** on approval the customer sees a receipt.
+participants:
+  - id: customer
+    name: Customer
+    type: actor
+  - id: payments
+    name: Payments API
+steps:
+  - id: s0
+    from: customer
+    to: payments
+    label: Sign in
+    link: journeys/sign-in
+  - id: s1
+    from: customer
+    to: payments
+    label: POST /payments
+    link: services/authorise-payment
+    badges:
+      - name: request
+        type: yaml
+        color: blue
+        content: "amount: 124900"
+  - alt:
+      - when: approved
+        steps:
+          - id: s2
+            from: payments
+            to: customer
+            label: 201 Created
+            kind: reply
+      - when: declined
+        steps:
+          - id: s3
+            from: payments
+            to: customer
+            label: 402 Payment declined
+            kind: reply
+    id: f1
 ```
 
-The `id` fields are part of the YAML format, but are hidden from the ordinary visual editing interface. Use raw YAML when you need to inspect or edit IDs. For cross-file references, load both files into the workspace; quoted links use the target filename without its `.yaml` extension, followed by `#` and the flow ID.
+The full reference is in [`skill/lifeline/SKILL.md`](skill/lifeline/SKILL.md), and [`skill/lifeline/references/`](skill/lifeline/references/) is a complete example workspace.
 
-## Generating diagrams with AI
+## Command line
 
-The **Lifeline Diagrams** Agent Skill teaches AI assistants to generate Lifeline-compatible YAML, including linked flows, notes, payload badges, and status badges.
+The validator and bundler use the same model as the app.
 
-The skill package contains:
+```sh
+npm install
+node bin/lifeline.mjs validate path/to/workspace
+node bin/lifeline.mjs bundle path/to/workspace journeys/checkout
+```
 
-- `SKILL.md` — YAML format, conventions, workflow, and validation checklist.
-- `references/` — example YAML files demonstrating multi-file references and application features.
+`validate` exits with status 1 when a workspace has errors, so it can run in CI.
 
-Upload the packaged skill to a compatible AI assistant, or provide its `SKILL.md` as guidance. The output is YAML files that you open directly in Lifeline. No helper scripts or special URL routes are required.
+## AI assistants
+
+The **Lifeline Diagrams** Agent Skill in `skill/lifeline/` teaches assistants the workspace format, conventions and validation checklist. Give an assistant `SKILL.md`, or upload the packaged skill, and ask for YAML and Markdown files to place in the workspace folder.
 
 ## Project files
 
 | Path | Purpose |
 | --- | --- |
-| `index.html` | Lifeline application (HTML, CSS, and JavaScript in one page; dependencies loaded from CDNs). |
-| `skill/lifeline/` | Lifeline Diagrams Agent Skill and example YAML references, if included in the repository. |
+| `index.html` | The Lifeline application. Dependencies load from CDNs. |
+| `lifeline-model.js` | Flow parsing, serialisation, validation and bundling, shared by the app and the command line. |
+| `bin/lifeline.mjs` | Command-line `validate` and `bundle`. |
+| `skill/lifeline/` | Agent Skill and the example workspace. |
 
 ## Hosting
 
-Host `index.html` as a static site. For GitHub Pages, configure **Settings → Pages → Deploy from a branch → main / root**. No build step is required.
-
-Direct file and folder access requires a supported browser and an appropriate secure context. Browser permission prompts and handle restoration are managed by the browser.
+Host the repository root as a static site; no build step is required. For GitHub Pages, configure **Settings -> Pages -> Deploy from a branch -> main / root**. Folder access requires Chrome or Edge on a secure origin (https or localhost). Other browsers open folders as read-only copies.

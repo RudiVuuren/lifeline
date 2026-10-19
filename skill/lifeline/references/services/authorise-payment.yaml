@@ -1,0 +1,137 @@
+name: Authorise payment
+notes: |-
+  Handling of `POST /payments` from request to response. Every participant involved is shown; fraud scoring is expanded in its [own flow](fraud-scoring.yaml) because other services reuse it.
+
+  **Outcomes**
+  - Exactly one payment exists per idempotency key.
+  - An authorised payment has a hold on the card and is queued for [settlement](../operations/settlement.yaml).
+
+  **Validation**
+  - Amount must be a positive integer in minor units.
+  - Currency must be an active ISO 4217 code supported by the merchant.
+participants:
+  - id: web
+    name: Web shop
+  - id: api
+    name: Payments API
+  - id: db
+    name: "Payments Database: payments"
+    type: database
+  - id: fraud
+    name: Fraud service
+    link: services/fraud-scoring
+  - id: network
+    name: Card network
+    type: external
+  - id: events
+    name: Payment events
+    type: queue
+steps:
+  - id: s1
+    from: web
+    to: api
+    label: POST /payments
+    notes: Validation runs before any lookup.
+    badges:
+      - name: request
+        type: yaml
+        color: blue
+        content: |-
+          orderId: ORD-20931
+          amount: 124900
+          currency: ZAR
+          idempotencyKey: 7c1e2a90
+  - id: s2
+    from: api
+    to: db
+    label: Find payment by idempotency key
+    badges:
+      - name: query
+        type: yaml
+        color: gray
+        content: |-
+          idempotencyKey: 7c1e2a90
+          limit: 1
+  - id: s3
+    from: db
+    to: api
+    label: No existing payment
+    kind: reply
+  - id: s4
+    from: api
+    to: db
+    label: Insert payment
+    notes: A unique index on idempotencyKey resolves concurrent duplicates; a repeated key returns the first payment unchanged.
+    badges:
+      - name: write
+        type: yaml
+        color: purple
+        content: |-
+          paymentId: pay_7Hc21
+          status: created
+          amount: 124900
+  - id: s5
+    from: api
+    to: fraud
+    label: Score transaction
+    link: services/fraud-scoring
+  - id: s6
+    from: fraud
+    to: api
+    label: score 0.12
+    kind: reply
+  - alt:
+      - when: score below 0.8
+        steps:
+          - id: s7
+            from: api
+            to: network
+            label: Authorise (0100)
+            notes: Times out after 25 seconds; a timeout is treated as declined and reversed.
+          - id: s8
+            from: network
+            to: api
+            label: 0110 approved
+            kind: reply
+          - id: s9
+            from: api
+            to: db
+            label: Update payment status
+            badges:
+              - name: "payment: authorised"
+                color: orange
+                content: The issuer has reserved the funds.
+          - id: s10
+            from: api
+            to: events
+            label: Publish payment.authorised
+            kind: async
+            link: operations/settlement
+            badges:
+              - name: event
+                type: yaml
+                color: purple
+                content: |-
+                  type: payment.authorised
+                  paymentId: pay_7Hc21
+          - id: s11
+            from: api
+            to: web
+            label: 201 Created
+            kind: reply
+      - when: score 0.8 or above, or network declines
+        steps:
+          - id: s12
+            from: api
+            to: db
+            label: Update payment status
+            badges:
+              - name: "payment: declined"
+                color: red
+                content: No funds are held.
+          - id: s13
+            from: api
+            to: web
+            label: 402 Payment declined
+            kind: reply
+    id: f1

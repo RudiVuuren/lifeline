@@ -1,0 +1,51 @@
+name: Fraud scoring
+notes: |-
+  The fraud service's internal processing. Each internal action is a self-call on the fraud service.
+
+  **Outcome:** the caller receives a score between 0 and 1 within 300 ms. On timeout the score is 0.5.
+participants:
+  - id: fraud
+    name: Fraud service
+  - id: cache
+    name: "Fraud Database: device_fingerprints"
+    type: database
+steps:
+  - id: s1
+    from: fraud
+    to: cache
+    label: Look up device fingerprint
+    badges:
+      - name: query
+        type: yaml
+        color: gray
+        content: "cardToken: tok_4f9a"
+  - id: s2
+    from: cache
+    to: fraud
+    label: Seen 14 times
+    kind: reply
+  - group: Score the transaction
+    id: f1
+    notes: Collapse this group to read the flow at a higher level.
+    steps:
+      - id: s3
+        from: fraud
+        to: fraud
+        label: Evaluate velocity rules
+      - id: s4
+        from: fraud
+        to: fraud
+        label: Predict with risk model
+      - id: s5
+        from: fraud
+        to: fraud
+        label: Combine into one score
+  - opt: score between 0.35 and 0.8
+    id: f2
+    steps:
+      - id: s6
+        from: fraud
+        to: fraud
+        label: Queue for manual review
+        link: services/manual-review
+        notes: Deliberately unresolved link that demonstrates missing references.

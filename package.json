@@ -1,0 +1,16 @@
+{
+  "name": "lifeline",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Plan systems as linked sequence-diagram flows stored as YAML and Markdown.",
+  "bin": {
+    "lifeline": "bin/lifeline.mjs"
+  },
+  "scripts": {
+    "validate": "node bin/lifeline.mjs validate",
+    "bundle": "node bin/lifeline.mjs bundle"
+  },
+  "dependencies": {
+    "js-yaml": "4.1.0"
+  }
+}

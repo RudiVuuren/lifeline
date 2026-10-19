@@ -1,0 +1,97 @@
+name: Checkout
+notes: |-
+  A signed-in customer pays for their basket by card. Payment handling is expanded in [Authorise payment](../services/authorise-payment.yaml); this journey keeps to what the customer does and sees.
+
+  **Outcomes**
+  - On approval the customer sees a receipt and the order is placed.
+  - On decline the basket is unchanged and the customer can try another card.
+
+  **Rules**
+  - The Pay button is disabled while a payment request is in progress.
+  - A retry after a timeout reuses the same idempotency key.
+participants:
+  - id: customer
+    name: Customer
+    type: actor
+  - id: web
+    name: Web shop
+  - id: payments
+    name: Payments API
+    link: services/authorise-payment
+steps:
+  - id: s0
+    from: customer
+    to: web
+    label: Sign in
+    link: journeys/sign-in
+    notes: Prerequisite. The linked flow covers it; checkout starts with an authenticated session.
+  - id: s1
+    from: customer
+    to: web
+    label: Review basket and press Pay
+    notes: The basket total includes delivery and tax before the customer confirms.
+  - id: s2
+    from: web
+    to: payments
+    label: POST /payments
+    link: services/authorise-payment
+    notes: The web shop generates one idempotency key per Pay press.
+    badges:
+      - name: request
+        type: yaml
+        color: blue
+        content: |-
+          orderId: ORD-20931
+          amount: 124900
+          currency: ZAR
+          cardToken: tok_4f9a
+          idempotencyKey: 7c1e2a90
+  - alt:
+      - when: approved
+        steps:
+          - id: s3
+            from: payments
+            to: web
+            label: 201 Created
+            kind: reply
+            badges:
+              - name: response
+                type: yaml
+                color: teal
+                content: |-
+                  paymentId: pay_7Hc21
+                  status: authorised
+              - name: "payment: authorised"
+                color: orange
+                content: Funds are held on the card; settlement captures them tonight.
+          - opt: customer ticked "save card"
+            id: f2
+            steps:
+              - id: s4
+                from: web
+                to: payments
+                label: POST /cards
+                notes: Stores the token only; the card number never reaches the web shop.
+          - id: s5
+            from: web
+            to: customer
+            label: Show receipt
+            kind: reply
+      - when: declined
+        steps:
+          - id: s6
+            from: payments
+            to: web
+            label: 402 Payment declined
+            kind: reply
+            badges:
+              - name: "payment: declined"
+                color: red
+                content: No funds are held.
+          - id: s7
+            from: web
+            to: customer
+            label: Show decline and keep basket
+            kind: reply
+            notes: The message does not repeat the issuer's decline reason.
+    id: f1
