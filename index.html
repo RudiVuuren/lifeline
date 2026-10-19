@@ -64,7 +64,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
 
 .top {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: 14px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto auto; align-items: center; gap: 14px;
   padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--rule);
 }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: -.01em; font-size: 15px; }
@@ -91,6 +91,25 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .doc-title:hover:not([readonly]) { border-color: var(--line); }
 .doc-title:focus:not([readonly]) { border-color: var(--accent); color: var(--ink); background: var(--surface); outline: none; }
 .doc-title[readonly] { cursor: default; }
+.qs { position: relative; width: 300px; }
+.qs > svg { position: absolute; left: 10px; top: 50%; width: 15px; height: 15px; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
+.qs input { width: 100%; height: 32px; padding: 0 58px 0 32px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 13px; outline: none; }
+.qs input::-webkit-search-cancel-button { display: none; }
+.qs input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.qs kbd { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--faint); font: 600 10px var(--f-mono); pointer-events: none; }
+.qs input:focus ~ kbd { display: none; }
+.qs-list { position: absolute; z-index: 45; top: 38px; left: 0; width: max(100%, 460px); max-height: 60vh; overflow: auto; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+.qs-item { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 10px; padding: 6px 9px; border-radius: 6px; cursor: pointer; }
+.qs-item.on { background: var(--accent-soft); }
+.qs-item .qi { grid-row: span 2; display: flex; color: var(--accent); }
+.qs-item .qi.doc { color: var(--b-teal); }
+.qs-item .qi.dir { color: var(--b-orange); }
+.qs-item .qi svg { width: 16px; height: 16px; }
+.qs-item .qt { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-item .qp { font: 11px var(--f-mono); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-item mark { background: transparent; color: var(--accent); font-weight: 700; }
+.qs-empty, .qs-head { padding: 8px 9px; color: var(--faint); font-size: 12.5px; }
+.qs-head { padding: 4px 9px; font: 600 10.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; }
 .tabs { display: flex; background: var(--bg); border: 1px solid var(--rule); border-radius: 9px; padding: 3px; gap: 2px; }
 .tab {
   border: 0; background: transparent; padding: 5px 14px; border-radius: 6px; cursor: pointer;
@@ -131,51 +150,64 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .body.rail-resizing, .body.rail-resizing * { cursor: col-resize !important; user-select: none !important; }
 .body.mode-map .rail-resizer { display: none; }
 
-.rail { background: var(--panel); border-right: 1px solid var(--rule); overflow: auto; padding: 14px 10px 20px; min-width: 0; }
-.rail-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 6px 10px; }
+.rail { background: var(--panel); border-right: 1px solid var(--rule); overflow: auto; padding: 10px 8px 24px; min-width: 0; }
+.rail-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 8px 8px; margin-bottom: 6px; border-bottom: 1px solid var(--rule); }
 .eyebrow { font: 600 10.5px var(--f-mono); letter-spacing: .09em; text-transform: uppercase; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rail-new-file { display: inline-flex; flex: none; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; background: var(--surface); color: var(--accent); font-size: 11px; font-weight: 700; cursor: pointer; }
-.rail-new-file:hover { border-color: var(--accent); background: var(--accent-soft); }
-.rail-new-file svg { width: 15px; height: 15px; }
-.tree { display: grid; gap: 1px; }
-.tree-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
-.tree-dir {
-  flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; border: 0; background: transparent; padding: 5px 6px;
-  border-radius: 6px; cursor: pointer; color: var(--muted); font: 600 11.5px var(--f-mono); text-align: left;
+.rail-btns { display: flex; gap: 2px; flex: none; }
+.rail-new-file { display: inline-flex; flex: none; align-items: center; gap: 4px; height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 600; cursor: pointer; }
+.rail-new-file:hover:not(:disabled) { background: var(--surface); border-color: var(--line); color: var(--accent); }
+.rail-new-file:disabled { opacity: .45; cursor: default; }
+.rail-new-file svg { width: 14px; height: 14px; }
+.tree { display: grid; gap: 1px; min-height: 40px; border-radius: 6px; }
+.tree-row { position: relative; display: flex; align-items: center; gap: 1px; min-width: 0; height: 28px; padding-right: 3px; border-radius: 6px; }
+.tree-row:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.tree-row.active { background: var(--accent-soft); }
+.tree-row.active::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; border-radius: 2px; background: var(--accent); }
+.tree-dir, .tree-item {
+  flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 7px; padding: 0 8px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--ink); text-align: left; cursor: pointer;
 }
-.tree-dir:hover { background: var(--bg); color: var(--ink); }
-.tree-dir .chev { width: 12px; flex: none; color: var(--faint); text-align: center; }
-.tree-dir .dn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tree-add { width: 24px; height: 24px; flex: none; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 6px; color: var(--faint); background: transparent; cursor: pointer; opacity: 0; }
-.tree-row:hover .tree-add, .tree-add:focus-visible { opacity: 1; }
+.tree-dir { font: 600 12.5px var(--f-ui); }
+.tree-item { font: 500 12.5px var(--f-ui); }
+.tree-dir .fi { display: flex; flex: none; color: var(--b-orange); }
+.tree-dir .fi:hover { filter: brightness(1.15); }
+.tree-dir .fi svg, .tree-item .gl svg { width: 16px; height: 16px; }
+.tree-dir .dn, .tree-item .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-item .gl { display: flex; flex: none; color: var(--accent); }
+.tree-item .gl.doc { color: var(--b-teal); }
+.tree-item .ext { color: var(--faint); font-weight: 400; }
+.tree-row.active .tree-item { font-weight: 600; }
+.tree-item .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; }
+.tree-item .dot.error { background: var(--danger); }
+.tree-item .dot.warning { background: var(--warn); }
+.tree-item.broken .nm { color: var(--danger); }
+.tree-add { width: 22px; height: 22px; flex: none; display: none; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 5px; color: var(--faint); background: transparent; cursor: pointer; }
+.tree-row:hover .tree-add, .tree-row:focus-within .tree-add { display: grid; }
 .tree-add:hover { color: var(--accent); border-color: var(--line); background: var(--surface); }
 .tree-add svg { width: 13px; height: 13px; }
 .tree-add.tree-del:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
-.tree-kids { margin-left: 11px; padding-left: 6px; border-left: 1px solid var(--rule); display: grid; gap: 1px; }
-.tree-item {
-  width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 7px;
-  border: 0; background: transparent; text-align: left; padding: 5px 8px; border-radius: 6px; cursor: pointer; color: var(--ink); font: 500 12px var(--f-mono);
-}
-.tree-item:hover { background: var(--bg); }
-.tree-item .gl { display: flex; color: var(--faint); }
-.tree-item .gl svg { width: 14px; height: 14px; }
-.tree-item .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tree-item .dot { width: 7px; height: 7px; border-radius: 50%; }
-.tree-item .dot.error { background: var(--danger); }
-.tree-item .dot.warning { background: var(--warn); }
-.tree-item.active { background: var(--accent-soft); font-weight: 700; }
-.tree-item.active .gl { color: var(--accent); }
-.tree-item.broken .nm { color: var(--danger); }
-.tree-rename { min-width: 0; width: 100%; height: 22px; padding: 0 5px; border: 1px solid var(--accent); border-radius: 4px; background: var(--surface); font: 500 12px var(--f-mono); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
-.tree-empty { padding: 8px; color: var(--faint); font-size: 12.5px; }
-.rail-btns { display: flex; gap: 4px; flex: none; }
-.rail-new-file:disabled { opacity: .45; cursor: default; }
-.tree { min-height: 40px; border-radius: 6px; }
+.tree-kids { margin-left: 16px; padding-left: 4px; border-left: 1px solid var(--rule); display: grid; gap: 1px; }
+.tree-rename { min-width: 0; flex: 1; width: 100%; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 5px; background: var(--surface); font: 500 12.5px var(--f-ui); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.tree-empty { padding: 10px 8px; color: var(--faint); font-size: 12.5px; }
 .tree.drop-root { outline: 1.5px dashed var(--accent); outline-offset: 3px; background: color-mix(in srgb, var(--accent-soft) 40%, transparent); }
-.tree-dir.drop { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.tree-row:has(> .tree-dir.drop) { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.tree-dir.drop { color: var(--accent); }
 .tree-item.dragging, .tree-dir.dragging { opacity: .45; }
-.tree-item.pending, .tree-row.pending .tree-dir { cursor: default; }
-.tree-item.pending:hover, .tree-row.pending .tree-dir:hover { background: transparent; }
+.tree-row.pending, .tree-row.pending .tree-dir, .tree-row.pending .tree-item { cursor: default; }
+.tree-row.pending:hover { background: transparent; }
+.rail { overflow-x: hidden; overflow-y: auto; }
+.tree, .tree-kids { grid-template-columns: minmax(0, 1fr); }
+.tree-node, .tree-row { min-width: 0; max-width: 100%; }
+.folder-pane { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; background: var(--canvas); }
+.fv-crumbs { padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--rule); flex: none; }
+.fv-scroll { overflow: auto; min-height: 0; padding: 28px; background-image: radial-gradient(var(--dot) 1px, transparent 1.2px); background-size: 18px 18px; }
+#folderSvg { display: block; margin: 0 auto; }
+#folderSvg .fv-group { fill-opacity: .35; stroke-dasharray: none; }
+#folderSvg .map-node { opacity: 1; }
+#folderSvg .fv-dir .map-box { fill: color-mix(in srgb, var(--b-orange) 7%, var(--surface)); }
+#folderSvg .fv-ic { color: var(--accent); }
+#folderSvg .fv-ic.doc { color: var(--b-teal); }
+#folderSvg .fv-dir .fv-ic { color: var(--b-orange); }
 
 .stage { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; }
 .crumbbar { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid var(--rule); background: var(--surface); min-width: 0; flex-wrap: wrap; }
@@ -194,7 +226,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .flow-select { display: none; max-width: 100%; }
 .tools { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 .zoomv { font: 11px var(--f-mono); color: var(--muted); min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; }
-.tree-row > .tree-item { flex: 1; min-width: 0; }
 .pbtn {
   border: 1px solid var(--line); background: var(--surface); border-radius: 7px; height: 30px; padding: 0 10px;
   display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; font-size: 12.5px;
@@ -304,16 +335,27 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .fr-toggle:hover rect { stroke: var(--accent); }
 .fr-toggle:hover text { fill: var(--accent); }
 
-.flow-notes { position: relative; margin: 8px 0 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); cursor: default; user-select: text; }
-.flow-notes.editable { cursor: text; }
-.flow-notes.editable:hover { border-color: var(--accent); }
-.flow-notes.empty { border-style: dashed; background: transparent; }
-.flow-notes .fn-ph { padding: 14px 18px; color: var(--faint); font-size: 13px; }
-.flow-notes .md { max-width: none; margin: 0; padding: 14px 20px 6px; }
-.flow-notes .fn-ed { position: relative; height: 200px; border-radius: 10px; overflow: hidden; }
-.flow-notes.editing { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.flow-notes .fn-tag { position: absolute; z-index: 20; top: -9px; left: 14px; padding: 0 6px; background: var(--canvas); color: var(--faint); font: 600 10.5px var(--f-mono); letter-spacing: .08em; pointer-events: none; }
-.flow-notes.editing .fn-tag { color: var(--accent); }
+.notes-panel { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); height: 200px; min-height: 0; border-top: 1px solid var(--rule); background: var(--surface); }
+.notes-panel.collapsed { height: auto; grid-template-rows: auto; }
+.notes-panel.collapsed .np-body, .notes-panel.collapsed .np-resize { display: none; }
+.np-resize { position: absolute; z-index: 5; top: -4px; left: 0; right: 0; height: 8px; cursor: row-resize; touch-action: none; }
+.np-resize::after { content: ''; position: absolute; left: 0; right: 0; top: 3px; height: 2px; background: var(--accent); opacity: 0; transition: opacity .15s; }
+.np-resize:hover::after, .notes-panel.resizing .np-resize::after { opacity: .8; }
+.notes-panel.resizing, .notes-panel.resizing * { user-select: none; cursor: row-resize !important; }
+.np-head { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; background: var(--panel); border-bottom: 1px solid var(--rule); }
+.notes-panel.collapsed .np-head { border-bottom: 0; }
+.np-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font: 600 10.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.np-toggle:hover { color: var(--ink); background: var(--bg); }
+.np-toggle svg { width: 12px; height: 12px; transition: transform .15s; }
+.notes-panel.collapsed .np-toggle svg { transform: rotate(-90deg); }
+.np-hint { margin-left: auto; color: var(--faint); font: 11px var(--f-mono); }
+.notes-panel.editing .np-hint { color: var(--accent); }
+.np-body { overflow: auto; min-height: 0; user-select: text; }
+.np-body.editable { cursor: text; }
+.np-body .md { max-width: 900px; margin: 0; padding: 12px 20px 16px; }
+.np-body .np-ph { padding: 14px 20px; color: var(--faint); font-size: 13px; }
+.np-ed { position: relative; height: 100%; }
+.np-ed .fallback-ed { height: 100%; }
 
 .doc-view { overflow: auto; min-height: 0; background: var(--surface); }
 .md { max-width: 780px; margin: 0 auto; padding: 28px 32px 90px; line-height: 1.6; overflow-wrap: anywhere; }
@@ -444,6 +486,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .dialog .pick { display: grid; gap: 4px; max-height: 220px; overflow: auto; }
 .dialog .foot { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .dialog .hint { font: 11.5px var(--f-mono); color: var(--faint); }
+.sync-bulk { display: flex; gap: 6px; flex-wrap: wrap; }
+.sync-list { display: grid; gap: 6px; max-height: 50vh; overflow: auto; }
+.sync-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.sync-row.conflict { border-color: color-mix(in srgb, var(--warn) 55%, var(--rule)); }
+.sync-info { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.sync-path { font: 600 12px var(--f-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sync-status { font-size: 12px; color: var(--muted); }
+.sync-row.conflict .sync-status { color: var(--warn); font-weight: 600; }
+.sync-pick { width: 180px; flex: none; }
+.sync-fixed { width: 180px; flex: none; text-align: center; font-size: 12px; color: var(--muted); }
 .probs { display: grid; gap: 4px; max-height: 60vh; overflow: auto; }
 .prob { border: 1px solid var(--rule); background: var(--surface); border-radius: 7px; padding: 7px 10px; text-align: left; cursor: pointer; display: grid; gap: 2px; }
 .prob:hover { border-color: var(--accent); }
@@ -513,6 +565,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 @media (max-width: 860px) {
   .top { grid-template-columns: auto minmax(0, 1fr) auto auto; row-gap: 8px; padding-block: 8px; }
+  .qs { display: none; }
   .tabs { grid-column: 1 / -1; grid-row: 2; justify-content: stretch; }
   .tab { flex: 1; justify-content: center; }
   .brand .wm { display: none; }
@@ -548,6 +601,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
     <div class="title-wrap">
       <input class="doc-title" id="docTitle" aria-label="Flow name" spellcheck="false">
       <div class="file-chip" id="fileChip" hidden></div>
+    </div>
+    <div class="qs" id="qs" role="search">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/></svg>
+      <input id="qsInput" type="search" placeholder="Search files and folders" spellcheck="false" autocomplete="off" aria-label="Search files and folders" aria-controls="qsList" aria-expanded="false">
+      <kbd>Ctrl P</kbd>
+      <div class="qs-list" id="qsList" role="listbox" hidden></div>
     </div>
     <nav class="tabs" role="tablist" aria-label="View">
       <button class="tab" role="tab" data-tab="yaml" id="tab-yaml">Source</button>
@@ -589,10 +648,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
         <div class="tools" id="tools"></div>
       </div>
       <div class="canvas-wrap" id="canvasWrap">
-        <div class="canvas-inner"><svg id="diagram" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence diagram"></svg><div class="flow-notes" id="flowNotes" hidden></div></div>
+        <div class="canvas-inner"><svg id="diagram" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence diagram"></svg></div>
       </div>
+      <section class="notes-panel" id="notesPanel" aria-label="Flow notes" hidden>
+        <div class="np-resize" id="npResize" role="separator" aria-orientation="horizontal" aria-label="Resize notes panel" title="Drag to resize; double-click to reset"></div>
+        <header class="np-head"><button class="np-toggle" id="npToggle" type="button" aria-expanded="true" aria-controls="npBody"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 6 8 10.5 12.5 6"/></svg>Notes</button><span class="np-hint" id="npHint"></span></header>
+        <div class="np-body" id="npBody"></div>
+      </section>
       <div class="md-split" id="mdSplit" hidden><div class="md-src"><div class="md-host" id="mdHost"><div class="loading-ed">Loading editor…</div></div></div><div class="md-pre" id="mdPre"><article class="md" id="mdPreview"></article></div></div>
       <div class="doc-view" id="docView" hidden></div>
+      <div class="folder-pane" id="folderPane" hidden><div class="fv-crumbs crumbs" id="fvCrumbs"></div><div class="fv-scroll"><svg id="folderSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Folder contents"></svg></div></div>
       <div class="map-pane" id="mapPane" hidden>
         <div class="map-toolbar"><span id="mapSummary">Map</span><span class="map-legend hide-narrow"><span class="out"><i></i>links to</span><span class="in"><i></i>linked from</span></span><div><button class="pbtn" id="mapZoomOut" type="button" aria-label="Zoom out">−</button> <span id="mapZoomLabel">100%</span> <button class="pbtn" id="mapZoomIn" type="button" aria-label="Zoom in">+</button> <button class="pbtn" id="mapReset" type="button">Fit Map</button></div></div>
         <div class="map-scroll" id="mapScroll"><svg id="mapSvg" xmlns="http://www.w3.org/2000/svg" aria-label="Reference map" role="img"></svg></div>
@@ -718,6 +783,8 @@ const ICON = {
   flow: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 2v12M12.5 2v12" stroke-dasharray="1.6 1.6"/><path d="M3.5 6h8M10 4.5 11.5 6 10 7.5"/><path d="M12.5 10.5h-8M6 9 4.5 10.5 6 12"/></svg>',
   doc: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3M5.5 8h5M5.5 10.5h5"/></svg>',
   plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
+  folder: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"><path d="M1.75 4a1.25 1.25 0 0 1 1.25-1.25h3.2l1.5 1.5h5.3A1.25 1.25 0 0 1 14.25 5.5v6.5A1.25 1.25 0 0 1 13 13.25H3A1.25 1.25 0 0 1 1.75 12z" fill="currentColor" fill-opacity=".22"/></svg>',
+  folderOpen: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"><path d="M1.75 12V4a1.25 1.25 0 0 1 1.25-1.25h3.2l1.5 1.5h4.8A1.25 1.25 0 0 1 13.75 5.5V7"/><path d="M1.75 12.5 3.6 7.6a1 1 0 0 1 .94-.65h9.86a.75.75 0 0 1 .7 1.02l-1.7 4.58a1 1 0 0 1-.94.65H2.3a.5.5 0 0 1-.55-.7z" fill="currentColor" fill-opacity=".22"/></svg>',
   folderPlus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4.5v8h13v-7H8L6.5 3.5h-5z"/><path d="M8 7.5v3.5M6.25 9.25h3.5"/></svg>',
   drill: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 6v6H6"/></svg>',
   left: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>',
@@ -734,13 +801,16 @@ const ICON = {
 };
 
 let workspace = [], activeKey = '', nav = [], sel = null, tab = 'design', zoom = 1;
-let folders = new Set(), treeDrag = null, dirClickT = null, pendingNew = null;
+let pauseBase = null;
+let folders = new Set(), treeDrag = null, dirClickT = null, pendingNew = null, railScrolledKey = null, folderView = null;
 let mode = 'empty', memoryName = 'Workspace', directoryHandle = null, syncEnabled = false, folderBlocked = false, refreshing = false, renaming = false;
 let undoStack = [], redoStack = [], lastKey = null, lastT = 0;
 let yamlEd = null, notesEd = null, mdEd = null, monacoReady = false;
 let sourceDirty = true, sourceInvalid = false, sourceT = null, mdKey = null, mdPreviewT = null;
 let lay = null, notesTargetKey = null, edTab = 'notes', edSelKey = null, pendingTab = null;
-let flowNotesEd = null;
+let flowNotesEd = null, notesCollapsed = false, notesHeight = 200;
+const STORE_NOTES = 'lifeline.v2.notesPanel';
+try { const s = JSON.parse(localStorage.getItem(STORE_NOTES) || 'null'); if (s) { notesCollapsed = !!s.collapsed; notesHeight = Number(s.height) || 200; } } catch (_) {}
 let problems = [];
 const collapsedFrags = new Set();
 let collapsedDirs = new Set();
@@ -856,7 +926,9 @@ function markSourceDirty() { sourceDirty = true; if (tab === 'yaml') syncSource(
 function render(withInspector) {
   problems = M.validateWorkspace(workspace);
   renderTop(); renderTabs(); renderRail(); renderCrumbs(); renderTools();
+  if (folderView != null && !folderExistsOrRoot(folderView)) folderView = null;
   if (tab === 'map') renderMap();
+  else if (folderView != null && tab !== 'yaml') renderFolderView();
   else if (tab !== 'yaml') { if (flow()) renderDiagram(); else renderDocView(); }
   if (withInspector) renderInspector();
   layoutClasses();
@@ -871,22 +943,26 @@ function layoutClasses() {
   b.classList.toggle('mode-design', tab === 'design');
   b.classList.toggle('mode-preview', tab === 'preview');
   const view = tab === 'design' || tab === 'preview';
-  const split = tab === 'design' && e && e.kind === 'doc';
-  b.classList.toggle('no-insp', !(f && tab === 'design' && sel));
-  $('#canvasWrap').hidden = !(view && f);
+  const fv = view && folderView != null;
+  const split = !fv && tab === 'design' && e && e.kind === 'doc';
+  b.classList.toggle('no-insp', !(f && tab === 'design' && sel && !fv));
+  $('#canvasWrap').hidden = !(view && f && !fv);
   $('#mdSplit').hidden = !split;
-  $('#docView').hidden = !(view && !f && !split);
+  $('#docView').hidden = !(view && !f && !split && !fv);
+  $('#folderPane').hidden = !fv;
+  $('#notesPanel').hidden = !(view && f && !fv && (f.notes || tab === 'design'));
   $('#mapPane').hidden = tab !== 'map';
-  $('#crumbbar').hidden = tab === 'yaml' || tab === 'map' || !e;
+  $('#crumbbar').hidden = tab === 'yaml' || tab === 'map' || !e || fv;
   $('#yamlPane').hidden = tab !== 'yaml';
   $('#btnMap').setAttribute('aria-pressed', String(tab === 'map'));
-  document.querySelector('.stage').style.gridTemplateRows = $('#crumbbar').hidden ? 'minmax(0, 1fr)' : '';
+  document.querySelector('.stage').style.gridTemplateRows = `${$('#crumbbar').hidden ? '' : 'auto '}minmax(0, 1fr)${$('#notesPanel').hidden ? '' : ' auto'}`;
   if (split && mdEd) mdEd.layout();
 }
 function renderTabs() { document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab))); }
 function renderTop() {
-  const e = activeEntry(), f = flow(), t = $('#docTitle');
-  const value = f ? f.name : e ? e.path : '';
+  const fv = folderView != null && tab !== 'yaml' && tab !== 'map';
+  const e = activeEntry(), f = fv ? null : flow(), t = $('#docTitle');
+  const value = fv ? (folderView ? `${folderView}/` : 'Workspace root') : f ? f.name : e ? e.path : '';
   if (document.activeElement !== t && t.value !== value) t.value = value;
   t.readOnly = !f || mode === 'readonly';
   t.setAttribute('aria-label', f ? 'Flow name' : 'File');
@@ -896,7 +972,7 @@ function renderTop() {
   const btn = $('#btnProblems');
   btn.hidden = !workspace.length;
   btn.dataset.level = errors ? 'error' : warns ? 'warning' : 'ok';
-  btn.innerHTML = problems.length ? `${ICON.warn}<span>${problems.length}</span>` : `${ICON.check}<span class="hide-narrow">No problems</span>`;
+  btn.innerHTML = problems.length ? `${ICON.warn}<span>${problems.length}</span>` : ICON.check;
   btn.title = problems.length ? `${errors} error${errors === 1 ? '' : 's'}, ${warns} warning${warns === 1 ? '' : 's'}` : 'No problems in this workspace';
   $('#railTitle').textContent = mode === 'folder' ? directoryHandle.name : mode === 'memory' ? memoryName : mode === 'readonly' ? 'Read-only workspace' : 'Workspace';
   const m = $('#fileMenu');
@@ -939,20 +1015,24 @@ function renderRail() {
   const fileRow = (e) => {
     const lvl = byPath.get(e.path);
     const tip = `${e.path}${e.kind === 'flow' && e.flow ? ` · ${e.flow.name}` : ''}${canEdit ? ' · double-click to rename, drag to move' : ''}`;
-    return `<div class="tree-row"><button class="tree-item${e.key === activeKey ? ' active' : ''}${e.kind === 'flow' && !e.flow ? ' broken' : ''}" data-open="${esc(e.key)}" title="${esc(tip)}"${canEdit ? ' draggable="true"' : ''}><span class="gl">${e.kind === 'doc' ? ICON.doc : ICON.flow}</span><span class="nm">${esc(baseName(e.path))}</span>${lvl ? `<span class="dot ${lvl}"></span>` : '<span></span>'}</button>${canEdit ? `<button class="tree-add tree-del" data-del-file="${esc(e.key)}" title="Delete ${esc(e.path)}" aria-label="Delete ${esc(e.path)}">${ICON.trash}</button>` : ''}</div>`;
+    const name = baseName(e.path), ext = extOf(name), stem = ext ? name.slice(0, -ext.length) : name;
+    const active = folderView == null && e.key === activeKey;
+    return `<div class="tree-row${active ? ' active' : ''}"><button class="tree-item${active ? ' active' : ''}${e.kind === 'flow' && !e.flow ? ' broken' : ''}" data-open="${esc(e.key)}" title="${esc(tip)}"${canEdit ? ' draggable="true"' : ''}><span class="gl${e.kind === 'doc' ? ' doc' : ''}">${e.kind === 'doc' ? ICON.doc : ICON.flow}</span><span class="nm">${esc(stem)}<span class="ext">${esc(ext)}</span></span>${lvl ? `<span class="dot ${lvl}" title="${lvl === 'error' ? 'Has errors' : 'Has warnings'}"></span>` : ''}</button>${canEdit ? `<button class="tree-add tree-del" data-del-file="${esc(e.key)}" title="Delete ${esc(e.path)}" aria-label="Delete ${esc(e.path)}">${ICON.trash}</button>` : ''}</div>`;
   };
   const dirHtml = (d) => {
     const closed = collapsedDirs.has(d.path);
-    return `<div><div class="tree-row"><button class="tree-dir" data-dir="${esc(d.path)}" aria-expanded="${!closed}"${canEdit ? ` draggable="true" title="${esc(d.path)} · double-click to rename, drag to move"` : ''}><span class="chev">${closed ? '▸' : '▾'}</span><span class="dn">${esc(d.name)}</span></button>${canEdit ? `<button class="tree-add" data-new-folder-in="${esc(d.path)}" title="New folder in ${esc(d.path)}" aria-label="New folder in ${esc(d.path)}">${ICON.folderPlus}</button><button class="tree-add" data-new-in="${esc(d.path)}" title="New file in ${esc(d.path)}" aria-label="New file in ${esc(d.path)}">${ICON.plus}</button><button class="tree-add tree-del" data-del-folder="${esc(d.path)}" title="Delete ${esc(d.path)}" aria-label="Delete folder ${esc(d.path)}">${ICON.trash}</button>` : ''}</div>${closed ? '' : `<div class="tree-kids">${inner(d)}</div>`}</div>`;
+    return `<div class="tree-node"><div class="tree-row${folderView === d.path ? ' active' : ''}"><button class="tree-dir" data-dir="${esc(d.path)}" aria-expanded="${!closed}" title="${esc(d.path)} · click to view${canEdit ? ', double-click to rename, drag to move' : ''}"${canEdit ? ' draggable="true"' : ''}><span class="fi" title="${closed ? 'Expand' : 'Collapse'}">${closed ? ICON.folder : ICON.folderOpen}</span><span class="dn">${esc(d.name)}</span></button>${canEdit ? `<button class="tree-add" data-new-folder-in="${esc(d.path)}" title="New folder in ${esc(d.path)}" aria-label="New folder in ${esc(d.path)}">${ICON.folderPlus}</button><button class="tree-add" data-new-in="${esc(d.path)}" title="New file in ${esc(d.path)}" aria-label="New file in ${esc(d.path)}">${ICON.plus}</button><button class="tree-add tree-del" data-del-folder="${esc(d.path)}" title="Delete ${esc(d.path)}" aria-label="Delete folder ${esc(d.path)}">${ICON.trash}</button>` : ''}</div>${closed ? '' : `<div class="tree-kids">${inner(d)}</div>`}</div>`;
   };
   const pendingRow = () => (pendingNew.kind === 'folder'
-    ? `<div class="tree-row pending"><div class="tree-dir"><span class="chev">▸</span><input class="tree-rename" id="pendingName" value="${esc(pendingNew.name)}" spellcheck="false" aria-label="New folder name"></div></div>`
-    : `<div class="tree-item pending"><span class="gl">${/\.md$/i.test(pendingNew.name) ? ICON.doc : ICON.flow}</span><input class="tree-rename" id="pendingName" value="${esc(pendingNew.name)}" spellcheck="false" aria-label="New file name"><span></span></div>`);
+    ? `<div class="tree-row pending"><div class="tree-dir"><span class="fi">${ICON.folder}</span><input class="tree-rename" id="pendingName" value="${esc(pendingNew.name)}" spellcheck="false" aria-label="New folder name"></div></div>`
+    : `<div class="tree-row pending"><div class="tree-item"><span class="gl">${ICON.flow}</span><input class="tree-rename" id="pendingName" value="${esc(pendingNew.name)}" spellcheck="false" aria-label="New file name"></div></div>`);
   const inner = (node) => (pendingNew && pendingNew.dir === node.path ? pendingRow() : '') + [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name)).map(dirHtml).join('') + node.files.map(fileRow).join('');
   $('#tree').innerHTML = workspace.length || folders.size || pendingNew ? inner(buildTree()) : `<div class="tree-empty">${mode === 'empty' ? 'No workspace is open.' : 'This folder has no .yaml or .md files yet.'}</div>`;
   $('#flowSelect').innerHTML = workspace.map((e) => `<option value="${esc(e.key)}" ${e.key === activeKey ? 'selected' : ''}>${esc(e.path)}</option>`).join('');
   $('#btnNewFile').disabled = !canEdit;
   $('#btnNewFolder').disabled = !canEdit;
+  if (railScrolledKey === activeKey) return;
+  railScrolledKey = activeKey;
   requestAnimationFrame(() => {
     const rail = document.querySelector('.rail'), a = document.querySelector('#tree .tree-item.active');
     if (!rail || !a || !rail.getClientRects().length) return;
@@ -1229,31 +1309,39 @@ function renderDiagram(animate) {
   renderFlowNotes(f, design);
 }
 function renderFlowNotes(f, design) {
-  const box = $('#flowNotes');
   if (flowNotesEd) return;
-  box.hidden = !f.notes && !design;
-  if (box.hidden) return;
-  box.style.width = `${lay.notesW}px`;
-  box.style.marginLeft = `${L.padX}px`;
-  box.style.zoom = zoom;
-  box.className = `flow-notes${design ? ' editable' : ''}${f.notes ? '' : ' empty'}`;
-  box.title = design ? 'Double-click to edit the flow notes (Markdown)' : '';
-  box.innerHTML = `<span class="fn-tag">NOTES</span>${f.notes ? `<div class="md">${mdHtml(f.notes)}</div>` : '<div class="fn-ph">Double-click to describe this flow. Markdown is supported.</div>'}`;
+  const panel = $('#notesPanel'), body = $('#npBody');
+  panel.classList.toggle('collapsed', notesCollapsed);
+  panel.style.height = notesCollapsed ? '' : `${notesHeight}px`;
+  panel.classList.remove('editing');
+  $('#npToggle').setAttribute('aria-expanded', String(!notesCollapsed));
+  $('#npHint').textContent = design ? 'Double-click to edit · Markdown' : '';
+  body.classList.toggle('editable', design);
+  body.innerHTML = f.notes ? `<div class="md">${mdHtml(f.notes)}</div>` : `<div class="np-ph">${design ? 'Double-click to describe this flow. Markdown is supported.' : 'No notes.'}</div>`;
 }
 function endFlowNotesEdit() {
   if (!flowNotesEd) return;
   const ed = flowNotesEd; flowNotesEd = null;
   ed.dispose();
-  if (flow()) renderDiagram();
+  const f = flow();
+  if (f) renderFlowNotes(f, editable());
+}
+function setNotesCollapsed(on) {
+  if (on) endFlowNotesEdit();
+  notesCollapsed = on;
+  try { localStorage.setItem(STORE_NOTES, JSON.stringify({ collapsed: notesCollapsed, height: notesHeight })); } catch (_) {}
+  const f = flow();
+  if (f) renderFlowNotes(f, editable());
 }
 function startFlowNotesEdit() {
   const f = flow();
   if (!f || !editable() || flowNotesEd) return;
-  const box = $('#flowNotes');
-  box.hidden = false;
-  box.className = 'flow-notes editing';
-  box.innerHTML = '<span class="fn-tag">NOTES · MARKDOWN</span><div class="fn-ed"></div>';
-  const host = box.querySelector('.fn-ed');
+  if (notesCollapsed) setNotesCollapsed(false);
+  const panel = $('#notesPanel'), body = $('#npBody');
+  panel.classList.add('editing');
+  $('#npHint').textContent = 'Editing Markdown · Esc or click away to finish';
+  body.innerHTML = '<div class="np-ed"></div>';
+  const host = body.querySelector('.np-ed');
   const finish = () => endFlowNotesEdit();
   const apply = (v) => { const cur = flow(); if (cur && cur.notes !== v) commit(() => { flow().notes = v; }, { key: `flownotes:${activeKey}`, inspector: false }); };
   if (monacoReady) {
@@ -1263,8 +1351,6 @@ function startFlowNotesEdit() {
       padding: { top: 12, bottom: 12 }, glyphMargin: false, folding: false, renderLineHighlight: 'none', overviewRulerLanes: 0,
       lineDecorationsWidth: 14, scrollbar: { verticalScrollbarSize: 9, alwaysConsumeMouseWheel: false }, quickSuggestions: false, wordBasedSuggestions: 'off',
     });
-    const fit = () => { host.style.height = `${Math.min(640, Math.max(160, ed.getContentHeight()))}px`; ed.layout(); };
-    ed.onDidContentSizeChange(fit); fit();
     ed.onDidChangeModelContent(() => apply(ed.getValue()));
     ed.onDidBlurEditorWidget(finish);
     ed.onKeyDown((e) => { if (e.keyCode === monaco.KeyCode.Escape) { e.preventDefault(); finish(); } });
@@ -1272,8 +1358,8 @@ function startFlowNotesEdit() {
     ed.focus();
   } else {
     const ta = document.createElement('textarea');
-    ta.className = 'fallback-ed'; ta.value = f.notes; ta.style.minHeight = '180px';
-    host.style.height = 'auto'; host.appendChild(ta);
+    ta.className = 'fallback-ed'; ta.value = f.notes;
+    host.appendChild(ta);
     ta.addEventListener('input', () => apply(ta.value));
     ta.addEventListener('blur', finish);
     ta.addEventListener('keydown', (e) => { if (e.key === 'Escape') finish(); });
@@ -1578,8 +1664,197 @@ function focusField(id) {
   });
 }
 function select(t) { sel = t; renderDiagram(); renderInspector(); layoutClasses(); }
+let qsItems = [], qsIndex = 0, qsRecent = [];
+function qsAllFolders() {
+  const out = new Set(folders);
+  for (const e of workspace) for (let d = dirName(e.path); d; d = dirName(d)) out.add(d);
+  return [...out];
+}
+function qsSearch(query) {
+  const toks = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const items = [
+    ...workspace.map((e) => ({ kind: e.kind, key: e.key, path: e.path, title: entryTitle(e) })),
+    ...qsAllFolders().map((d) => ({ kind: 'dir', key: d, path: `${d}/`, title: baseName(d) })),
+  ];
+  if (!toks.length) {
+    const recent = qsRecent.map((k) => items.find((i) => i.kind !== 'dir' && i.key === k)).filter(Boolean);
+    const rest = items.filter((i) => i.kind !== 'dir' && !qsRecent.includes(i.key)).sort((a, b) => a.path.localeCompare(b.path));
+    return [...recent, ...rest].slice(0, 60);
+  }
+  const scored = [];
+  for (const it of items) {
+    let total = 0;
+    const hp = new Set(), ht = new Set();
+    for (const tok of toks) {
+      const a = fuzzyMatch(it.path, tok), b = fuzzyMatch(it.title, tok);
+      if (!a && !b) { total = null; break; }
+      if (a && (!b || a.score >= b.score - 2)) { total += a.score; a.pos.forEach((p) => hp.add(p)); }
+      else { total += b.score - 2; b.pos.forEach((p) => ht.add(p)); }
+    }
+    if (total == null) continue;
+    scored.push({ ...it, score: total - it.path.length * 0.05 - (it.kind === 'dir' ? 1 : 0), hp, ht });
+  }
+  return scored.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path)).slice(0, 60);
+}
+function fuzzyMatch(text, pat) {
+  const t = text.toLowerCase(), n = t.length, m = pat.length;
+  if (!m || m > n) return m ? null : { score: 0, pos: [] };
+  const baseStart = text.lastIndexOf('/', n - 2) + 1;
+  const bonus = (j) => {
+    let s = 1;
+    const prev = j ? text[j - 1] : '';
+    if (!j || '/-_. '.includes(prev)) s += 8;
+    else if (text[j] !== t[j] && prev === prev.toLowerCase() && /[a-z]/.test(prev)) s += 6;
+    if (j >= baseStart) s += 3;
+    if (j === baseStart) s += 4;
+    return s;
+  };
+  const NEG = -1e9, back = [];
+  let prevRow = null;
+  for (let i = 0; i < m; i++) {
+    const row = new Array(n).fill(NEG), from = new Array(n).fill(-1);
+    let runBest = NEG, runIdx = -1;
+    for (let j = 0; j < n; j++) {
+      if (i > 0 && j >= 2 && prevRow[j - 2] > runBest) { runBest = prevRow[j - 2]; runIdx = j - 2; }
+      if (t[j] !== pat[i]) continue;
+      if (i === 0) { row[j] = bonus(j) - j * 0.05; continue; }
+      let best = NEG, bi = -1;
+      if (j >= 1 && prevRow[j - 1] > NEG) { best = prevRow[j - 1] + bonus(j) + 6; bi = j - 1; }
+      if (runBest > NEG && runBest + bonus(j) - 1.5 > best) { best = runBest + bonus(j) - 1.5; bi = runIdx; }
+      row[j] = best; from[j] = bi;
+    }
+    back.push(from);
+    prevRow = row;
+  }
+  let end = -1, best = NEG;
+  for (let j = 0; j < n; j++) if (prevRow[j] > best) { best = prevRow[j]; end = j; }
+  if (end < 0 || best <= NEG / 2) return null;
+  const pos = [];
+  for (let i = m - 1, j = end; i >= 0; i--) { pos.push(j); j = back[i][j]; }
+  return { score: best, pos };
+}
+function qsMark(text, hits) {
+  let out = '', on = false;
+  for (let i = 0; i < text.length; i++) {
+    const h = !!hits && hits.has(i);
+    if (h !== on) { out += h ? '<mark>' : '</mark>'; on = h; }
+    out += esc(text[i]);
+  }
+  return on ? `${out}</mark>` : out;
+}
+function renderQuickSearch() {
+  const input = $('#qsInput'), list = $('#qsList');
+  const q = input.value.trim();
+  qsItems = qsSearch(q);
+  if (qsIndex >= qsItems.length) qsIndex = Math.max(0, qsItems.length - 1);
+  const head = !q && qsRecent.length ? '<div class="qs-head">Recent and all files</div>' : '';
+  list.innerHTML = !workspace.length ? '<div class="qs-empty">Open a workspace to search it.</div>'
+    : !qsItems.length ? `<div class="qs-empty">No files or folders match “${esc(q)}”.</div>`
+    : head + qsItems.map((it, i) => `<div class="qs-item${i === qsIndex ? ' on' : ''}" role="option" aria-selected="${i === qsIndex}" data-qs="${i}"><span class="qi${it.kind === 'doc' ? ' doc' : it.kind === 'dir' ? ' dir' : ''}">${it.kind === 'dir' ? ICON.folder : it.kind === 'doc' ? ICON.doc : ICON.flow}</span><span class="qt">${qsMark(it.title, it.ht)}</span><span class="qp">${qsMark(it.path, it.hp)}</span></div>`).join('');
+  list.hidden = false;
+  input.setAttribute('aria-expanded', 'true');
+  list.querySelector('.qs-item.on')?.scrollIntoView({ block: 'nearest' });
+}
+function closeQuickSearch(blur) {
+  $('#qsList').hidden = true;
+  $('#qsInput').setAttribute('aria-expanded', 'false');
+  if (blur) $('#qsInput').blur();
+}
+function openQuickSearch() {
+  const input = $('#qsInput');
+  if (!input.offsetParent) return;
+  input.focus(); input.select();
+  qsIndex = 0; renderQuickSearch();
+}
+function pickQuickSearch(i) {
+  const it = qsItems[i]; if (!it) return;
+  $('#qsInput').value = '';
+  closeQuickSearch(true);
+  if (it.kind === 'dir') { selectFolder(it.key); renderRail(); markRailActive(); return; }
+  if (tab === 'map') tab = lastMapViewTab;
+  openEntry(it.key, false);
+}
+function wireQuickSearch() {
+  const input = $('#qsInput'), list = $('#qsList');
+  input.addEventListener('focus', () => { qsIndex = 0; renderQuickSearch(); });
+  input.addEventListener('input', () => { qsIndex = 0; renderQuickSearch(); });
+  input.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== input) closeQuickSearch(false); }, 120));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!qsItems.length) return; qsIndex = (qsIndex + (e.key === 'ArrowDown' ? 1 : -1) + qsItems.length) % qsItems.length; renderQuickSearch(); }
+    else if (e.key === 'Enter') { e.preventDefault(); pickQuickSearch(qsIndex); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); input.value = ''; closeQuickSearch(true); }
+  });
+  list.addEventListener('mousedown', (e) => { const it = e.target.closest('[data-qs]'); if (it) { e.preventDefault(); pickQuickSearch(+it.dataset.qs); } });
+  list.addEventListener('mousemove', (e) => { const it = e.target.closest('[data-qs]'); if (it && +it.dataset.qs !== qsIndex) { qsIndex = +it.dataset.qs; list.querySelectorAll('.qs-item').forEach((x, i) => { x.classList.toggle('on', i === qsIndex); x.setAttribute('aria-selected', String(i === qsIndex)); }); } });
+}
+function folderExistsOrRoot(path) { return path === '' || folderExists(path); }
+function folderContents(path) {
+  const prefix = path ? `${path}/` : '';
+  const dirs = new Map(), files = [];
+  const addDir = (d) => { if (!dirs.has(d)) dirs.set(d, 0); };
+  for (const d of folders) if (dirName(d) === path && d !== path) addDir(d);
+  for (const e of workspace) {
+    if (!e.path.startsWith(prefix)) continue;
+    const rest = e.path.slice(prefix.length);
+    if (!rest.includes('/')) { files.push(e); continue; }
+    const d = prefix + rest.split('/')[0];
+    addDir(d); dirs.set(d, dirs.get(d) + 1);
+  }
+  return { dirs: [...dirs].sort((a, b) => a[0].localeCompare(b[0])), files: files.sort((a, b) => a.path.localeCompare(b.path)) };
+}
+function renderFolderView() {
+  const path = folderView, { dirs, files } = folderContents(path);
+  const segs = path ? path.split('/') : [];
+  $('#fvCrumbs').innerHTML = [['', 'Workspace root'], ...segs.map((s, i) => [segs.slice(0, i + 1).join('/'), s])]
+    .map(([p, label]) => `<button class="crumb${p === path ? ' cur' : ''}" data-fv-dir="${esc(p)}">${esc(label)}</button>`).join('');
+  const nodeW = 224, nodeH = 70, stepX = 254, stepY = 104;
+  const n = dirs.length + files.length, cols = Math.max(1, Math.min(4, n)), rows = Math.max(1, Math.ceil(n / cols));
+  const w = 40 + cols * stepX - (stepX - nodeW), h = 76 + rows * stepY - (stepY - nodeH) + 20;
+  const clip = (label, font, max) => { let s = String(label || ''); while (s.length && tw(s, font) > max) s = s.slice(0, -1); return s === label ? s : `${s.replace(/\s+$/, '')}…`; };
+  const icon = (svg, x, y) => svg.replace('<svg ', `<svg x="${x}" y="${y}" width="16" height="16" `);
+  const fName = '600 13px "Schibsted Grotesk", Arial, sans-serif', fSub = '500 10.5px JetBrains Mono, monospace';
+  const errs = new Set(problems.filter((p) => p.severity === 'error').map((p) => p.path));
+  let s = `<rect class="map-file-group fv-group" x="1" y="1" width="${w - 2}" height="${h - 2}" rx="16"/><text class="map-group-label" x="17" y="27">${esc(path ? `${path}/` : 'workspace root')}</text>`;
+  const items = [...dirs.map(([d, count]) => ({ dir: d, count })), ...files.map((e) => ({ e }))];
+  items.forEach((it, i) => {
+    const x = 20 + (i % cols) * stepX, y = 46 + Math.floor(i / cols) * stepY;
+    if (it.dir != null) {
+      const name = baseName(it.dir), sub = it.count ? `${it.count} file${it.count === 1 ? '' : 's'}` : 'empty folder';
+      s += `<g class="map-node fv-dir" data-fv-dir="${esc(it.dir)}"><title>${esc(it.dir)}/ — open folder</title><rect class="map-box" x="${x}" y="${y}" width="${nodeW}" height="${nodeH}" rx="10"/><g class="fv-ic">${icon(ICON.folder, x + 12, y + 18)}</g><text class="map-name" x="${x + 36}" y="${y + 31}">${esc(clip(name, fName, nodeW - 48))}</text><text class="map-sub" x="${x + 36}" y="${y + 51}">${esc(sub)}</text></g>`;
+    } else {
+      const e = it.e, cls = e.kind === 'doc' ? ' doc' : !e.flow ? ' broken' : '';
+      s += `<g class="map-node${cls}${errs.has(e.path) ? ' broken' : ''}${e.key === activeKey ? ' map-active' : ''}" data-fv-open="${esc(e.key)}"><title>${esc(entryTitle(e))} — ${esc(e.path)}</title><rect class="map-box" x="${x}" y="${y}" width="${nodeW}" height="${nodeH}" rx="10"/><g class="fv-ic${e.kind === 'doc' ? ' doc' : ''}">${icon(e.kind === 'doc' ? ICON.doc : ICON.flow, x + 12, y + 18)}</g><text class="map-name" x="${x + 36}" y="${y + 31}">${esc(clip(entryTitle(e), fName, nodeW - 48))}</text><text class="map-sub" x="${x + 36}" y="${y + 51}">${esc(clip(baseName(e.path), fSub, nodeW - 48))}</text></g>`;
+    }
+  });
+  if (!n) s += `<text class="empty-t" x="20" y="${46 + 38}">This folder is empty.</text>`;
+  const svg = $('#folderSvg');
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.setAttribute('width', w); svg.setAttribute('height', h);
+  svg.innerHTML = s;
+}
+function markRailActive() {
+  document.querySelectorAll('#tree .tree-row.active, #tree .tree-item.active').forEach((x) => x.classList.remove('active'));
+  if (folderView != null) {
+    const d = [...document.querySelectorAll('#tree [data-dir]')].find((x) => x.dataset.dir === folderView);
+    d?.closest('.tree-row')?.classList.add('active');
+    return;
+  }
+  const f = [...document.querySelectorAll('#tree [data-open]')].find((x) => x.dataset.open === activeKey);
+  if (f) { f.classList.add('active'); f.closest('.tree-row')?.classList.add('active'); }
+}
+function selectFolder(path) {
+  if (!folderExistsOrRoot(path)) return;
+  flushSource();
+  if (flowNotesEd) endFlowNotesEdit();
+  folderView = path; sel = null;
+  if (tab === 'yaml' || tab === 'map') { setTab(lastMapViewTab); return; }
+  renderTop(); renderFolderView(); layoutClasses(); markRailActive();
+  $('#folderPane .fv-scroll').scrollTo({ left: 0, top: 0 });
+}
 function openEntry(key, push) {
   const e = entryByKey(key); if (!e) return;
+  folderView = null;
+  qsRecent = [key, ...qsRecent.filter((k) => k !== key)].slice(0, 8);
   flushSource();
   if (flowNotesEd) { const ed = flowNotesEd; flowNotesEd = null; ed.dispose(); }
   if (push) { const at = nav.indexOf(key); nav = at >= 0 ? nav.slice(0, at + 1) : [...nav, key]; } else nav = [key];
@@ -2367,6 +2642,8 @@ function installWorkspace(entries, opts) {
   workspace = entries; sortWorkspace();
   mode = opts.mode; directoryHandle = opts.dir || null; folderBlocked = false; folders = opts.dirs || new Set();
   syncEnabled = mode === 'folder' && opts.sync !== false;
+  pauseBase = null;
+  if (mode === 'folder' && !syncEnabled) capturePauseBase();
   activeKey = preferredKey(); nav = activeKey ? [activeKey] : []; sel = null;
   undoStack = []; redoStack = []; sourceDirty = true; sourceInvalid = false; mdKey = null; collapsedFrags.clear();
   void storeFolder();
@@ -2407,9 +2684,11 @@ async function writePath(dir, path, text) {
   const w = await h.createWritable(); await w.write(text); await w.close();
   return h;
 }
+const diskLive = () => mode === 'folder' && syncEnabled;
+const pausedNote = () => (mode === 'folder' && !syncEnabled ? ' Saving is paused; the folder is updated when you resume.' : '');
 async function createFile(path, text) {
   let extra = {};
-  if (mode === 'folder') {
+  if (diskLive()) {
     const h = await writePath(directoryHandle, path, text), file = await h.getFile();
     extra = { handle: h, lastModified: file.lastModified, size: file.size };
   }
@@ -2497,15 +2776,21 @@ async function moveFiles(mapping, dirMove = null) {
   const mapDir = (d) => (dirMove && (d === dirMove.from || d.startsWith(`${dirMove.from}/`)) ? dirMove.to + d.slice(dirMove.from.length) : d);
   renaming = true;
   try {
-    if (mode === 'folder') await moveOnDisk(mapping, dirMove);
+    const live = diskLive();
+    if (live) await moveOnDisk(mapping, dirMove);
     const touched = rewriteLinksForMoves(mapping);
-    for (const [o, n] of mapping) { const e = entryByKey(o); e.path = n; e.key = n; }
+    for (const [o, n] of mapping) {
+      const e = entryByKey(o);
+      e.path = n; e.key = n;
+      if (!live && mode === 'folder') { clearTimeout(e.saveT); e.handle = null; e.dirty = true; e.state = 'paused'; }
+    }
     const swap = (k) => mapping.get(k) || k;
     nav = nav.map(swap); activeKey = swap(activeKey);
     const remap = (stack) => stack.map((s) => { const o = JSON.parse(s); o.key = swap(o.key); o.nav = o.nav.map(swap); return JSON.stringify(o); });
     undoStack = remap(undoStack); redoStack = remap(redoStack);
     if (mdKey) mdKey = swap(mdKey);
     folders = new Set([...folders].map(mapDir));
+    if (folderView) folderView = mapDir(folderView);
     collapsedDirs = new Set([...collapsedDirs].map(mapDir));
     for (const n of mapping.values()) for (let d = dirName(n); d; d = dirName(d)) collapsedDirs.delete(d);
     sortWorkspace(); sourceDirty = true;
@@ -2582,12 +2867,12 @@ async function createFolder(raw) {
   const path = M.normPath(raw).replace(/\/+$/, '');
   if (!path || path.split('/').some((p) => !p || p === '.' || p === '..' || p.startsWith('.'))) throw new Error('Enter a folder path such as journeys/payments.');
   if (folderExists(path) || hasPath(path)) throw new Error(`${path} already exists.`);
-  if (mode === 'folder') await dirHandleFor(path, true);
+  if (diskLive()) await dirHandleFor(path, true);
   for (let d = path; d; d = dirName(d)) { folders.add(d); collapsedDirs.delete(d); }
   render(false);
   toast(`Created folder ${path}.`);
 }
-function startNewItem(kind, dir = dirName(activeKey)) {
+function startNewItem(kind, dir = folderView ?? dirName(activeKey)) {
   if (mode !== 'folder' && mode !== 'memory') return;
   if ($('#tree .tree-rename')) { $('#tree .tree-rename').focus(); return; }
   for (let d = dir; d; d = dirName(d)) collapsedDirs.delete(d);
@@ -2644,7 +2929,7 @@ function confirmDelete(key) {
   const e = entryByKey(key);
   if (!e || (mode !== 'folder' && mode !== 'memory')) return;
   const linking = workspace.filter((x) => x !== e && M.linksOf(x, hasPath).some((l) => l.target === e.path)).length;
-  const where = mode === 'folder' ? `It is permanently deleted from ${directoryHandle.name}.` : 'It is removed from this in-memory workspace.';
+  const where = diskLive() ? `It is permanently deleted from ${directoryHandle.name}.` : mode === 'folder' ? 'It is removed from this tab. Saving is paused, so the folder only changes when you resume and confirm.' : 'It is removed from this in-memory workspace.';
   const refs = linking ? ` ${linking} other file${linking === 1 ? ' links' : 's link'} to it and will show a missing link.` : '';
   confirmModal(`Delete ${baseName(e.path)}?`, `${where}${refs}`, 'Delete', () => deleteEntry(key));
 }
@@ -2653,7 +2938,7 @@ async function deleteEntry(key) {
   renaming = true;
   try {
     clearTimeout(e.saveT);
-    if (mode === 'folder') {
+    if (diskLive() && e.handle) {
       const parent = await dirHandleFor(dirName(e.path), false);
       await parent.removeEntry(baseName(e.path));
     }
@@ -2693,7 +2978,7 @@ async function confirmDeleteFolder(path) {
   const contents = files || others
     ? `${files ? `${files} flow or document file${files === 1 ? '' : 's'}` : ''}${files && others ? ' and ' : ''}${others ? `${others} other file${others === 1 ? '' : 's'} not shown in Lifeline` : ''} ${files + others === 1 ? 'is' : 'are'} deleted with it.`
     : 'The folder is empty.';
-  const where = mode === 'folder' ? `It is permanently deleted from ${directoryHandle.name}.` : 'It is removed from this in-memory workspace.';
+  const where = diskLive() ? `It is permanently deleted from ${directoryHandle.name}.` : mode === 'folder' ? 'It is removed from this tab. Saving is paused, so the folder only changes when you resume and confirm.' : 'It is removed from this in-memory workspace.';
   const refs = linking ? ` ${linking} other file${linking === 1 ? ' links' : 's link'} into it and will show missing links.` : '';
   confirmModal(`Delete ${baseName(path)}/?`, `${where} ${contents}${refs}`, 'Delete', () => deleteFolder(path));
 }
@@ -2703,7 +2988,7 @@ async function deleteFolder(path) {
   try {
     const gone = workspace.filter((e) => inside(e.path));
     gone.forEach((e) => clearTimeout(e.saveT));
-    if (mode === 'folder') {
+    if (diskLive()) {
       const parent = await dirHandleFor(dirName(path), false);
       await parent.removeEntry(baseName(path), { recursive: true });
     }
@@ -2797,9 +3082,9 @@ async function saveToFolder() {
 }
 function scheduleFileSave(e) {
   if (!e) return;
-  if (mode !== 'folder' || !e.handle) { e.dirty = false; return; }
+  if (mode !== 'folder') { e.dirty = false; return; }
   e.dirty = true;
-  if (!syncEnabled) { e.state = 'paused'; renderChip(); return; }
+  if (!syncEnabled || !e.handle) { e.state = 'paused'; renderChip(); return; }
   if (e.state !== 'saving') { e.state = 'saving'; renderChip(); }
   clearTimeout(e.saveT);
   e.saveT = setTimeout(() => writeEntry(e, false), 600);
@@ -2832,6 +3117,7 @@ async function writeEntry(e, gesture) {
 }
 async function saveAllNow() {
   if (mode !== 'folder') { if (mode === 'memory') saveToFolder(); return; }
+  if (!syncEnabled) { await resumeSync(); return; }
   const dirty = workspace.filter((e) => e.dirty);
   for (const e of dirty) { clearTimeout(e.saveT); await writeEntry(e, true); }
   toast(dirty.length ? `Saved ${dirty.length} file${dirty.length === 1 ? '' : 's'}.` : 'Everything is saved.');
@@ -2841,16 +3127,175 @@ async function toggleSync() {
   if (folderBlocked || workspace.some((e) => e.state === 'blocked')) {
     try { if (await directoryHandle.requestPermission({ mode: 'readwrite' }) !== 'granted') { toastError('Folder access was not granted.'); return; } }
     catch (_) { toastError('Folder access was not granted.'); return; }
-    folderBlocked = false; syncEnabled = true;
-    workspace.forEach((e) => { if (e.state === 'blocked') e.state = 'saved'; if (e.dirty) scheduleFileSave(e); });
-    renderChip(); void storeFolder(); await refreshWorkspace();
+    folderBlocked = false;
+    if (syncEnabled) { syncEnabled = false; capturePauseBase(); }
+    workspace.forEach((e) => { clearTimeout(e.saveT); if (e.state === 'blocked') e.state = e.dirty ? 'paused' : 'saved'; });
+    await resumeSync();
     return;
   }
-  syncEnabled = !syncEnabled;
-  void storeFolder();
-  if (syncEnabled) { workspace.forEach((e) => { if (e.dirty) scheduleFileSave(e); else e.state = 'saved'; }); await refreshWorkspace(); toast('Saving to the folder resumed.'); }
-  else { workspace.forEach((e) => { clearTimeout(e.saveT); if (e.dirty) e.state = 'paused'; }); toast('Saving to the folder paused. Edits stay in this tab until you resume.'); }
-  renderChip();
+  if (syncEnabled) {
+    syncEnabled = false;
+    capturePauseBase();
+    void storeFolder();
+    workspace.forEach((e) => { clearTimeout(e.saveT); if (e.dirty) e.state = 'paused'; });
+    toast('Saving to the folder paused. Edits stay in this tab until you resume.');
+    renderChip();
+    return;
+  }
+  await resumeSync();
+}
+function capturePauseBase() {
+  pauseBase = { files: new Map(workspace.filter((e) => e.handle).map((e) => [e.path, e.lastText])), dirs: new Set(folders) };
+}
+function browserDirs() {
+  const out = new Set(folders);
+  for (const e of workspace) for (let d = dirName(e.path); d; d = dirName(d)) out.add(d);
+  return out;
+}
+async function collectSyncDiffs() {
+  const dirs = new Set(), items = await collectDirectory(directoryHandle, '', dirs);
+  const onDisk = new Map(items.map((it) => [it.path, it.handle]));
+  const base = pauseBase || { files: new Map(workspace.filter((e) => e.handle).map((e) => [e.path, e.lastText])), dirs: new Set(dirs) };
+  const bDirs = browserDirs();
+  const inside = (p, d) => p.startsWith(`${d}/`);
+  const removedDirs = [...dirs].filter((d) => base.dirs.has(d) && !bDirs.has(d)).sort();
+  const topRemoved = removedDirs.filter((d) => !removedDirs.some((o) => o !== d && inside(d, o)));
+  const diffs = [];
+  for (const d of topRemoved) {
+    const files = items.filter((it) => inside(it.path, d)).map((it) => it.path);
+    let others = 0;
+    try { others = await countOtherFiles(await dirHandleFor(d, false)); } catch (_) {}
+    diffs.push({ kind: 'dirRemoved', path: d, files, others });
+  }
+  const underRemoved = (p) => topRemoved.some((d) => inside(p, d));
+  for (const e of workspace) {
+    const h = onDisk.get(e.path);
+    const browser = e.dirty || !e.handle ? serialize(e) : e.lastText;
+    if (!h) {
+      diffs.push(base.files.has(e.path) ? { kind: 'missing', e, status: browser !== base.files.get(e.path) ? 'both' : 'folder' } : { kind: 'created', e });
+      continue;
+    }
+    const file = await h.getFile(), disk = await file.text();
+    if (disk === browser) {
+      Object.assign(e, { handle: h, lastText: disk, lastModified: file.lastModified, size: file.size, dirty: false, state: 'saved' });
+      continue;
+    }
+    const baseText = base.files.has(e.path) ? base.files.get(e.path) : e.lastText;
+    const browserChanged = browser !== baseText, diskChanged = disk !== baseText;
+    diffs.push({ kind: 'changed', e, h, disk, file, status: browserChanged && diskChanged ? 'both' : browserChanged ? 'browser' : 'folder' });
+  }
+  for (const [path, h] of onDisk) {
+    if (entryByKey(path) || underRemoved(path)) continue;
+    if (!base.files.has(path)) { diffs.push({ kind: 'new', path, h }); continue; }
+    const disk = await (await h.getFile()).text();
+    diffs.push({ kind: 'removed', path, h, status: disk !== base.files.get(path) ? 'both' : 'browser' });
+  }
+  const createdDirs = [...bDirs].filter((d) => !dirs.has(d) && !base.dirs.has(d) && !workspace.some((e) => inside(e.path, d)));
+  for (const d of createdDirs) diffs.push({ kind: 'dirCreated', path: d });
+  const missingDirs = [...bDirs].filter((d) => !dirs.has(d) && base.dirs.has(d) && !workspace.some((e) => inside(e.path, d)));
+  for (const d of missingDirs) diffs.push({ kind: 'dirMissing', path: d });
+  return { diffs };
+}
+const SYNC_KINDS = {
+  changed: { label: (d) => ({ browser: 'Changed in browser', folder: 'Changed in folder', both: 'Changed in both' }[d.status]), opts: ['Browser', 'Folder'], def: (d) => (d.status === 'folder' ? 'folder' : 'browser') },
+  created: { label: () => 'New in browser', opts: ['Create', 'Discard'], def: () => 'browser' },
+  removed: { label: (d) => (d.status === 'both' ? 'Deleted in browser, changed in folder' : 'Deleted in browser'), opts: ['Delete', 'Keep'], def: (d) => (d.status === 'both' ? 'folder' : 'browser') },
+  missing: { label: (d) => (d.status === 'both' ? 'Deleted from folder, changed in browser' : 'Deleted from folder'), opts: ['Recreate', 'Remove'], def: (d) => (d.status === 'both' ? 'browser' : 'folder') },
+  new: { label: () => 'New in folder', fixed: 'Load from folder' },
+  dirCreated: { label: () => 'New folder in browser', opts: ['Create', 'Discard'], def: () => 'browser' },
+  dirMissing: { label: () => 'Folder deleted from folder', opts: ['Recreate', 'Remove'], def: () => 'folder' },
+  dirRemoved: {
+    label: (d) => `Folder deleted in browser · ${d.files.length} flow or document file${d.files.length === 1 ? '' : 's'}${d.others ? `, ${d.others} other file${d.others === 1 ? '' : 's'}` : ''}`,
+    opts: ['Delete', 'Keep'], def: (d) => (d.others ? 'folder' : 'browser'),
+  },
+};
+const syncPath = (d) => (d.e ? d.e.path : d.kind.startsWith('dir') ? `${d.path}/` : d.path);
+async function applySyncChoice(d, pick) {
+  const keepBrowser = pick === 'browser';
+  const loadFromDisk = async (path, h) => { if (!entryByKey(path)) workspace.push(await entryFromHandle(h, path)); };
+  switch (d.kind) {
+    case 'new': await loadFromDisk(d.path, d.h); break;
+    case 'created': case 'missing':
+      if (keepBrowser) {
+        const text = serialize(d.e), h = await writePath(directoryHandle, d.e.path, text), file = await h.getFile();
+        Object.assign(d.e, { handle: h, lastText: text, lastModified: file.lastModified, size: file.size, dirty: false, state: 'saved' });
+      } else dropEntries(new Set([d.e.key]));
+      break;
+    case 'removed':
+      if (keepBrowser) await removeOnDisk(d.path, false); else await loadFromDisk(d.path, d.h);
+      break;
+    case 'changed':
+      if (keepBrowser) {
+        const text = serialize(d.e), w = await d.h.createWritable();
+        await w.write(text); await w.close();
+        const file = await d.h.getFile();
+        Object.assign(d.e, { handle: d.h, lastText: text, lastModified: file.lastModified, size: file.size, dirty: false, state: 'saved' });
+      } else {
+        if (d.e.kind === 'doc') d.e.text = d.disk; else parseInto(d.e, d.disk);
+        Object.assign(d.e, { handle: d.h, lastText: d.disk, lastModified: d.file.lastModified, size: d.file.size, dirty: false, state: 'saved' });
+      }
+      break;
+    case 'dirCreated': case 'dirMissing':
+      if (keepBrowser) await dirHandleFor(d.path, true);
+      else folders = new Set([...folders].filter((x) => x !== d.path && !x.startsWith(`${d.path}/`)));
+      break;
+    case 'dirRemoved':
+      if (keepBrowser) await removeOnDisk(d.path, true);
+      else {
+        const dirH = await dirHandleFor(d.path, false), sub = new Set([d.path]);
+        for (const it of await collectDirectory(dirH, d.path, sub)) await loadFromDisk(it.path, it.handle);
+        sub.forEach((x) => folders.add(x));
+      }
+      break;
+  }
+}
+async function resumeSync() {
+  let found;
+  try { found = await collectSyncDiffs(); }
+  catch (err) { toastError(`Could not read ${directoryHandle.name}: ${errText(err)}`); return; }
+  const { diffs } = found;
+  const finish = async () => {
+    const dirs = new Set();
+    try { await collectDirectory(directoryHandle, '', dirs); folders = dirs; } catch (_) {}
+    syncEnabled = true; pauseBase = null;
+    workspace.forEach((e) => { if (e.dirty && e.handle) scheduleFileSave(e); else if (e.handle) e.state = 'saved'; });
+    void storeFolder();
+    sortWorkspace(); fixSel(); sourceDirty = true; mdKey = null;
+    if (tab === 'yaml') syncSource();
+    render(true); renderChip();
+  };
+  if (!diffs.length) { await finish(); toast('Saving to the folder resumed.'); return; }
+  openSyncModal(diffs, async (choices) => {
+    renaming = true;
+    try {
+      const order = (d) => (d.kind === 'dirRemoved' ? 2 : d.kind.startsWith('dir') ? 0 : 1);
+      const idx = diffs.map((_, i) => i).sort((a, b) => order(diffs[a]) - order(diffs[b]));
+      for (const i of idx) await applySyncChoice(diffs[i], choices[i]);
+    } catch (err) { toastError(`Could not finish syncing: ${errText(err)}. Saving stays paused.`); render(true); return; }
+    finally { renaming = false; }
+    await finish();
+    toast(`Saving resumed. Applied ${choices.length} choice${choices.length === 1 ? '' : 's'}.`);
+  });
+}
+function openSyncModal(diffs, apply) {
+  const choices = diffs.map((d) => (SYNC_KINDS[d.kind].fixed ? 'folder' : SYNC_KINDS[d.kind].def(d)));
+  const row = (d, i) => {
+    const k = SYNC_KINDS[d.kind], path = syncPath(d);
+    const pick = k.fixed
+      ? `<span class="sync-fixed">${k.fixed}</span>`
+      : `<div class="seg sync-pick" role="radiogroup" aria-label="Choice for ${esc(path)}" style="grid-template-columns:repeat(2,minmax(0,1fr))">${[['browser', k.opts[0]], ['folder', k.opts[1]]].map(([v, t]) => `<button type="button" role="radio" data-sync="${i}" data-v="${v}" aria-checked="${choices[i] === v}"><span>${t}</span></button>`).join('')}</div>`;
+    return `<div class="sync-row${d.status === 'both' || d.kind === 'dirRemoved' ? ' conflict' : ''}"><div class="sync-info"><span class="sync-path">${esc(path)}</span><span class="sync-status">${esc(k.label(d))}</span></div>${pick}</div>`;
+  };
+  const d = openModal(`<h3>Folder and Browser Differ</h3><p>Saving to <b>${esc(directoryHandle.name)}</b> was paused and ${diffs.length} item${diffs.length === 1 ? ' differs' : 's differ'}. Choose what to keep. Cancel leaves saving paused and changes nothing.</p><div class="sync-bulk"><button type="button" class="pbtn" data-all="browser">Keep All Browser</button><button type="button" class="pbtn" data-all="folder">Keep All Folder</button></div><div class="sync-list">${diffs.map(row).join('')}</div><div class="foot"><button class="pbtn" id="sync-cancel">Cancel</button><button class="pbtn primary" id="sync-apply">Resume Sync</button></div>`, true);
+  const refresh = () => d.querySelectorAll('[data-sync]').forEach((b) => b.setAttribute('aria-checked', String(choices[+b.dataset.sync] === b.dataset.v)));
+  d.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sync]');
+    if (b) { choices[+b.dataset.sync] = b.dataset.v; refresh(); return; }
+    const all = e.target.closest('[data-all]');
+    if (all) { diffs.forEach((x, i) => { if (!SYNC_KINDS[x.kind].fixed) choices[i] = all.dataset.all; }); refresh(); }
+  });
+  d.querySelector('#sync-cancel').addEventListener('click', () => { closeModal(); toast('Saving stays paused.'); });
+  d.querySelector('#sync-apply').addEventListener('click', async (e) => { e.target.disabled = true; closeModal(); await apply(choices); });
 }
 async function refreshWorkspace() {
   if (mode !== 'folder' || !syncEnabled || refreshing || renaming || folderBlocked || !directoryHandle) return;
@@ -3014,7 +3459,7 @@ function wheelDelta(e) { return e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode
 let canvasPan = null, spaceHeld = false;
 function canvasPanDown(e) {
   const wrap = $('#canvasWrap'), svg = $('#diagram');
-  if (flowNotesEd && !e.target.closest('.flow-notes')) endFlowNotesEdit();
+  if (flowNotesEd) endFlowNotesEdit();
   if (e.shiftKey && editable() && svg.contains(e.target)) return;
   const blank = e.target === wrap || e.target === svg || e.target.classList.contains('canvas-inner');
   if (!(e.button === 1 || (e.button === 0 && (spaceHeld || blank)))) return;
@@ -3068,9 +3513,11 @@ function railClick(e) {
     const p = dir.dataset.dir;
     clearTimeout(dirClickT);
     const toggle = () => { if (collapsedDirs.has(p)) collapsedDirs.delete(p); else collapsedDirs.add(p); try { localStorage.setItem(STORE_DIRS, JSON.stringify([...collapsedDirs])); } catch (_) {} renderRail(); };
-    if (e.target.closest('.chev')) { toggle(); return; }
+    if (e.target.closest('.fi')) { toggle(); return; }
     if (e.detail >= 2) { startFolderRename(p); return; }
-    dirClickT = setTimeout(toggle, 250);
+    const wasSelected = folderView === p;
+    selectFolder(p);
+    if (collapsedDirs.has(p) && !wasSelected) dirClickT = setTimeout(toggle, 250);
     return;
   }
   const delFile = e.target.closest('[data-del-file]');
@@ -3143,6 +3590,7 @@ function wire() {
   $('#docTitle').addEventListener('input', (e) => { const v = e.target.value; commit(() => { flow().name = v; }, { key: 'title', inspector: false }); });
   $('#btnNewFile').addEventListener('click', () => startNewItem('file'));
   wireEditorPane();
+  wireQuickSearch();
   const ctrlCursor = (e) => $('#diagram').classList.toggle('ctrl-held', tab === 'design' && (e.ctrlKey || e.metaKey));
   window.addEventListener('keydown', ctrlCursor); window.addEventListener('keyup', ctrlCursor); window.addEventListener('blur', () => $('#diagram').classList.remove('ctrl-held'));
   $('#tree').addEventListener('click', railClick);
@@ -3206,12 +3654,33 @@ function wire() {
     openMdLink(e);
   });
   $('#mdPre').addEventListener('click', openMdLink);
-  $('#flowNotes').addEventListener('click', (e) => { if (e.target.closest('a[href]') && !flowNotesEd) openMdLink(e); });
-  $('#flowNotes').addEventListener('dblclick', (e) => { if (!flowNotesEd && !e.target.closest('a[href]')) { e.preventDefault(); startFlowNotesEdit(); } });
+  $('#folderPane').addEventListener('click', (e) => {
+    const f = e.target.closest('[data-fv-open]');
+    if (f) { openEntry(f.dataset.fvOpen, false); return; }
+    const d = e.target.closest('[data-fv-dir]');
+    if (d && d.dataset.fvDir !== folderView) { selectFolder(d.dataset.fvDir); renderRail(); markRailActive(); }
+  });
+  $('#npBody').addEventListener('click', (e) => { if (e.target.closest('a[href]') && !flowNotesEd) openMdLink(e); });
+  $('#npBody').addEventListener('dblclick', (e) => { if (!flowNotesEd && !e.target.closest('a[href]')) { e.preventDefault(); startFlowNotesEdit(); } });
+  $('#npToggle').addEventListener('click', () => setNotesCollapsed(!notesCollapsed));
+  $('#notesPanel').addEventListener('dblclick', (e) => { if (e.target.closest('.np-head') && !e.target.closest('.np-toggle')) setNotesCollapsed(!notesCollapsed); });
+  const npGrip = $('#npResize');
+  let npPointer = null;
+  const setNotesHeight = (h, persist) => {
+    const stage = document.querySelector('.stage').getBoundingClientRect();
+    notesHeight = Math.round(Math.max(90, Math.min(stage.height * 0.75, h)));
+    $('#notesPanel').style.height = `${notesHeight}px`;
+    if (persist) { try { localStorage.setItem(STORE_NOTES, JSON.stringify({ collapsed: notesCollapsed, height: notesHeight })); } catch (_) {} }
+  };
+  npGrip.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; e.preventDefault(); npPointer = e.pointerId; npGrip.setPointerCapture(npPointer); $('#notesPanel').classList.add('resizing'); });
+  npGrip.addEventListener('pointermove', (e) => { if (npPointer !== e.pointerId) return; setNotesHeight($('#notesPanel').getBoundingClientRect().bottom - e.clientY, false); });
+  const npEnd = (e) => { if (npPointer !== e.pointerId) return; npPointer = null; $('#notesPanel').classList.remove('resizing'); setNotesHeight(notesHeight, true); };
+  npGrip.addEventListener('pointerup', npEnd); npGrip.addEventListener('pointercancel', npEnd);
+  npGrip.addEventListener('dblclick', () => setNotesHeight(200, true));
+  $('#notesPanel').style.height = notesCollapsed ? '' : `${notesHeight}px`;
   const wrap = $('#canvasWrap');
   wrap.addEventListener('wheel', (e) => {
     if (e.ctrlKey || e.metaKey) { e.preventDefault(); setZoom(zoom * Math.exp(-wheelDelta(e) * 0.0015), e.clientX, e.clientY); return; }
-    if (!e.shiftKey && e.target.closest('.flow-notes .monaco-editor')) return;
     e.preventDefault();
     if (e.shiftKey) wrap.scrollLeft += wheelDelta(e) || e.deltaX;
     else wrap.scrollTop += wheelDelta(e);
@@ -3243,6 +3712,7 @@ function wire() {
     if (e.code === 'Space' && !inField) { spaceHeld = true; wrap.classList.add('panning'); e.preventDefault(); }
     if (cmdKey === 's') { e.preventDefault(); saveAllNow(); return; }
     if (cmdKey === 'o') { e.preventDefault(); openFolder(); return; }
+    if (cmdKey === 'p') { e.preventDefault(); openQuickSearch(); return; }
     if (e.key === 'Escape') { if (!$('#modal').hidden) return closeModal(); if (sel && !inField) select(null); return; }
     if (inField || !$('#modal').hidden) return;
     const mod = e.metaKey || e.ctrlKey;
